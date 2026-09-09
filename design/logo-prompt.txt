@@ -1,0 +1,8 @@
+Use case: logo-brand
+Asset type: polished app emblem and Steam library icon for FieldScreen TV, a premium NFL gameday dashboard for docked Steam Deck, Linux desktop, and TV platforms.
+Primary request: Create ONE centered icon/emblem only, with absolutely no text. A compact geometric penguin gives the Linux connection. Its torso and negative-space chest incorporate an unmistakable American football shape with simple crisp laces; angular flippers naturally suggest a widescreen frame. This must read as one coherent unified professional sports/software mark, not three pasted symbols.
+Style/medium: restrained crisp flat shapes, premium original graphic identity, broad confident silhouette with very few details, readable at 48px.
+Color palette: deep forest green, off-white, electric lime, with a very restrained ice-blue accent, for a premium green football control-room UI.
+Composition/framing: square canvas, single centered emblem, generous even safety margins all around, no cropped parts.
+Scene/backdrop: genuinely transparent background with an alpha channel; no colored backdrop, no checkerboard drawn into the image.
+Constraints: original penguin, no copied Tux artwork, no helmet, no cute cartoon styling, no angry esports mascot, no gradients, no excessive details, no lettering, no watermark. Make the football chest and wide angular flippers legible while retaining an unmistakable penguin silhouette.

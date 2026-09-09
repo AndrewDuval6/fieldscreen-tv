@@ -1,0 +1,33 @@
+appId: com.andrewduval6.fieldscreen
+productName: FieldScreen TV
+directories:
+  app: desktop
+  output: release
+  buildResources: desktop
+files:
+  - main.cjs
+  - preload.cjs
+  - icon.png
+  - '!node_modules/**/*'
+extraFiles:
+  - from: public/preview
+    to: resources/public/preview
+asar: true
+compression: normal
+linux:
+  syncDesktopName: true
+  executableName: fieldscreen-tv
+  category: AudioVideo
+  icon: desktop/icon.png
+  target:
+    - target: AppImage
+      arch: [x64]
+    - target: tar.gz
+      arch: [x64]
+  artifactName: FieldScreen-TV-${version}-Linux-${arch}.${ext}
+  desktop:
+    entry:
+      Name: FieldScreen TV
+      Comment: TV-first NFL dashboard preview
+      StartupWMClass: fieldscreen-tv
+publish: null

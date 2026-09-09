@@ -1,0 +1,19 @@
+html,body{width:100%;height:100%;margin:0;background:#07140f;color:#e8f0e8;overflow:hidden}
+body{display:grid;place-items:center}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+#fieldscreen-concept{width:min(100vw,177.777778vh);margin:0;border:0!important;border-radius:0!important}
+#fieldscreen-concept #ez-deck,#fieldscreen-concept #ez-tv,#fieldscreen-concept #ez-command{display:none!important}
+#fieldscreen-concept.ez-tv.ez-tv-fit .ez-top #ez-intro{display:inline-flex}
+#fieldscreen-concept .ez-controller-focus{outline:3px solid #74baff!important;outline-offset:3px;box-shadow:0 0 0 6px #132c4199!important}
+#fieldscreen-concept .ez-controller-hint{display:none;font:500 calc(var(--ez-u)*18) 'IBM Plex Mono',monospace}
+#fieldscreen-concept.ez-controller-connected .ez-controller-hint{display:block}
+#fieldscreen-concept.ez-controller-connected #ez-status{display:none}
+#fieldscreen-concept .ez-native-exit{white-space:nowrap}
+
+#fieldscreen-concept .fs-brand-mark{object-fit:contain;background:none;transform:none;flex-shrink:0}
+#fieldscreen-concept.ez-tv.ez-tv-fit .fs-brand-mark{width:calc(var(--ez-u)*74);height:calc(var(--ez-u)*74)}
+#fieldscreen-concept .fs-launch-identity{display:flex;align-items:center;gap:clamp(14px,2cqw,38px)}
+#fieldscreen-concept .fs-launch-mark{width:clamp(92px,15cqw,260px);height:auto;object-fit:contain;flex-shrink:0}
+#fieldscreen-concept .ez-launch-word{font-size:clamp(46px,8.2cqw,155px)}
+#fieldscreen-concept .ez-launch-word small{display:inline-block;vertical-align:top;font:600 .2em/1 'IBM Plex Mono',monospace;letter-spacing:0;margin:.22em 0 0 .5em;color:#b5d7a7}
