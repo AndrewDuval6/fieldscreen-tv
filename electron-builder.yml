@@ -7,6 +7,13 @@ directories:
 files:
   - main.cjs
   - preload.cjs
+  - vault.cjs
+  - from: generated
+    to: .
+    filter:
+      - iptv.cjs
+  - from: generated/licenses
+    to: licenses
   - icon.png
   - '!node_modules/**/*'
 extraFiles:
@@ -28,6 +35,6 @@ linux:
   desktop:
     entry:
       Name: FieldScreen TV
-      Comment: TV-first NFL dashboard preview
+      Comment: NFL dashboard and IPTV multiview
       StartupWMClass: fieldscreen-tv
 publish: null

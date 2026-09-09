@@ -1,17 +1,23 @@
-const { app, BrowserWindow, ipcMain, Menu, powerSaveBlocker } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, powerSaveBlocker, safeStorage } = require('electron');
 const path = require('node:path');
+const { startLocalServer } = require('./iptv.cjs');
+const { createVault } = require('./vault.cjs');
 
 let window;
 let wakeLock;
+let localServer;
+let rendererFailed = false;
 const smokeTest = process.argv.includes('--smoke-test');
-const page = path.join(__dirname, '..', 'public', 'preview', 'index.html');
+const directory = path.join(__dirname, '..', 'public', 'preview');
 
 app.setName('FieldScreen TV');
 app.enableSandbox();
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on('second-instance', () => { window?.show(); window?.focus(); });
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
+    const vault = createVault(path.join(app.getPath('userData'), 'provider.enc'), safeStorage);
+    localServer = await startLocalServer({ directory, vault });
     Menu.setApplicationMenu(null);
     window = new BrowserWindow({
       title: 'FieldScreen TV — Preview', width: 1600, height: 900,
@@ -43,20 +49,26 @@ else {
       console.error(`FieldScreen renderer stopped: ${details.reason}`);
       if (smokeTest) app.exit(1);
     });
+    if (smokeTest) window.webContents.on('console-message', (_event, details) => {
+      if (details.level === 'error') { rendererFailed = true; console.error('FieldScreen renderer reported a script or resource error.'); }
+    });
     window.once('ready-to-show', () => {
       if (smokeTest) {
-        console.log('FieldScreen TV renderer loaded with sandbox enabled.');
-        app.quit();
+        setTimeout(() => {
+          console.log('FieldScreen TV renderer loaded with sandbox and local IPTV service.');
+          app.exit(rendererFailed ? 1 : 0);
+        }, 3000);
       } else {
         window.show();
         wakeLock = powerSaveBlocker.start('prevent-display-sleep');
       }
     });
-    window.loadFile(page);
+    window.loadURL(localServer.url);
     if (smokeTest) setTimeout(() => app.exit(1), 15000).unref();
-  });
+  }).catch(() => { console.error('FieldScreen TV could not start its local player service.'); app.exit(1); });
 }
 app.on('window-all-closed', () => app.quit());
 app.on('will-quit', () => {
+  localServer?.close();
   if (wakeLock !== undefined && powerSaveBlocker.isStarted(wakeLock)) powerSaveBlocker.stop(wakeLock);
 });

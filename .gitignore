@@ -1,5 +1,6 @@
 # dependencies
 /node_modules
+/desktop/generated/
 /.pnp
 .pnp.*
 .yarn/*

@@ -6,7 +6,7 @@
 
 A television-first NFL control room for game day. Field positions, a featured game, and configurable video/data panes in one 16:9 screen.
 
-**Development preview · v0.1.0-preview.1.** Scores and events are simulated. Live NFL data, IPTV playback, and wireless casting are not connected in this version.
+**Development preview · v0.1.0-preview.1.** Scores and events are simulated. IPTV playback and XMLTV guide browsing are included. Live NFL scores/statistics and wireless casting are not connected in this version.
 
 ## Steam Deck is the TV console
 
@@ -42,28 +42,45 @@ The preview opens full screen with a skippable introduction. **F11** toggles the
 | D-pad / left stick | Move focus between controls |
 | A | Activate the focused control; cycle a selected pane's content |
 | Left / right on a pane selector | Previous / next content source |
-| B | Close the introduction or return focus to the view switch |
+| B | Close the provider/guide panel or introduction; return focus to the view switch |
 | X | Select a pane's audio; pin the featured game in Director |
 | Y | Change multiview layout; toggle automatic focus in Director |
 | LB / RB | Director / Multiview |
 | Menu | Play / pause the Sunday simulation in Director |
 
-Standard-mapped controllers use the browser Gamepad API. Mouse and keyboard controls also work. Automated tests cover navigation and button behavior; hardware compatibility is not yet verified.
+Standard-mapped controllers use the browser Gamepad API. Mouse and keyboard controls also work. Automated tests cover navigation, provider import, stream proxying, guide matching, credential-storage policy, and player reuse; hardware compatibility is not yet verified. Entering provider details may need a keyboard or Steam’s on-screen keyboard.
+
+## Connect IPTV and find games
+
+1. Choose **Connect IPTV** in the top bar.
+2. Enter an **Xtream** provider address, username, and password, or choose **M3U playlist** and paste its URL/import a file.
+3. Add your **XMLTV guide URL** if needed. Xtream guides and guide URLs embedded in M3U headers are detected automatically.
+4. Search for a team, matchup, or channel. Filter by group, **Football**, **RedZone**, or **On now**.
+5. Choose a destination screen, then **Watch** on a channel. Assign additional screens, then open **Watch wall**.
+
+The guide joins XMLTV programme channel IDs to the playlist's `tvg-id` (or Xtream `epg_channel_id`). It shows current and upcoming listings, local start times, and searchable descriptions from the next 48 hours. Guide refresh runs every 15 minutes while connected; **Refresh guide** refreshes immediately. Football discovery is a name/description filter, not video recognition or an official sports feed. A scheduled programme does not guarantee that a channel is currently carrying the game. Without guide data, channels remain searchable by name and group.
+
+M3U/XMLTV files can contain account credentials. Enter them only in the app. They are held in the local service for the current session. The packaged Linux app can optionally remember a provider using an available OS keyring; it refuses insecure plaintext fallback. Browser development sessions do not save provider credentials. **Disconnect & forget** stops playback and removes the saved provider. The app does not send account information to GitHub or an app-operated service; it contacts the provider and the stream/guide servers supplied by that provider.
+
+Standard HTTP HLS and MPEG-TS playback are included, plus browser-compatible MP4/WebM links. Video/audio codecs must be supported by the bundled browser; H.264/AAC is the most broadly compatible combination. DRM-protected streams, UDP/RTSP, proprietary headers, and provider-specific authentication beyond the supplied URL/login are not implemented. A public **Try sample video** option checks a Mux-hosted Big Buck Bunny stream; it is not an NFL broadcast.
+
+Each visible video pane uses a provider connection. Four games normally require four allowed connections and sufficient bandwidth/decoding performance. Moving a game to the main pane preserves its player. Changing to a smaller layout stops hidden streams; selecting another view or disconnecting stops the watch-wall players. Only one video is audible. Sample data panes remain available alongside live video.
 
 ## Included in the preview
 
 - Sunday Director: six sample games, event progression, automatic selection, and manual pinning.
 - Detailed proportioned fields with home-team end zones, yard numbers, NFL hash marks, and sample possession markers.
 - Full-screen, split, four-pane, and one-plus-three layouts.
-- Assign example games, RedZone placeholders, scores, or standings to panes.
-- One audio-selection state; information-only panes do not receive audio focus.
+- Assign IPTV channels (including your provider’s RedZone), sample games, scores, or standings to panes.
+- M3U URL/file import, Xtream login, XMLTV EPG matching, team/channel search, and now/next listings.
+- Real single-pane audio focus; information-only panes do not receive audio focus.
 - Stadium and Night themes, loading previews, and reduced-motion support.
 
 ## Still to build
 
-Live scores, all 32 teams, schedules, standings, team and game statistics, saved layouts, private IPTV setup and real playback, casting, and hardware verification. The Yahoo fantasy companion remains a separate project.
+Live scores, all 32 teams, schedules, standings, team and game statistics, saved layouts, casting, and hardware verification. The Yahoo fantasy companion remains a separate project.
 
-Do not add IPTV credentials, playlist URLs containing credentials, or API secrets to the source or GitHub issues. The preview has no credential-entry feature and makes no live data requests.
+Do not add IPTV credentials, playlist URLs containing credentials, or API secrets to the source or GitHub issues. Use the private in-app setup for credentials. Your actual provider and physical Steam Deck/TV playback have not yet been verified.
 
 ## Development
 
@@ -77,10 +94,10 @@ npm run desktop
 
 For the browser version, run `npm run dev -- --host 127.0.0.1`. For a Linux download, run `npm run package:linux`. Built packages appear in `release/`. See [preview security scope](SECURITY.md) before using the browser development entry.
 
-`design/tv-preview.html` preserves the approved visual study. `scripts/build-preview.mjs` produces its offline TV application. `desktop/` provides the sandboxed Electron shell. `app/` retains the React/Vinext entry point for the full dashboard implementation. The Linux workflow checks the browser build and packages the desktop preview.
+`design/tv-preview.html` preserves the approved visual study. `scripts/build-preview.mjs` produces its TV application and bundles the local IPTV service. `desktop/` provides the sandboxed Electron shell. `app/` retains the React/Vinext entry point for the full dashboard implementation. The Linux workflow checks the browser build and packages the desktop preview.
 
 ## Artwork and dependencies
 
-The penguin/football emblem and stadium backdrop are original generated artwork. The backdrop is not a photograph of a live game. The logo was created with the built-in image generator; its [prompt](design/logo-prompt.txt) is included for provenance. Field diagrams use simulated data. Fonts are distributed under the licenses included with their packages. Icons come from Lucide. Third-party dependencies retain their respective licenses. This is an independent fan project, not an official NFL or Yahoo product.
+The penguin/football emblem and stadium backdrop are original generated artwork. The backdrop is not a photograph of a live game. The logo was created with the built-in image generator; its [prompt](design/logo-prompt.txt) is included for provenance. Field diagrams use simulated data. Fonts are distributed under the licenses included with their packages. Icons come from Lucide. Video playback uses [hls.js](https://github.com/video-dev/hls.js) and [mpegts.js](https://github.com/xqq/mpegts.js); XMLTV parsing uses [saxes](https://github.com/lddubeau/saxes). Their licenses are included in the package. Third-party dependencies retain their respective licenses. This is an independent fan project, not an official NFL or Yahoo product.
 
 The source is published for inspection and download. An open-source license for the project has not been selected; third-party licenses still apply.

@@ -7,15 +7,15 @@ const supported = ['single', 'split', 'quad', 'focus'];
 let lastInput = {}, controllerIndex = null, activeControl = null;
 
 function visibleControls() {
-  const dialog = !q('#ez-launch').hidden ? q('#ez-launch') : !q('#ez-overlay').hidden ? q('#ez-overlay') : root;
-  return [...dialog.querySelectorAll('button, select')].filter(element => {
+  const dialog = !q('#fs-iptv-modal').hidden ? q('#fs-iptv-modal') : !q('#ez-launch').hidden ? q('#ez-launch') : !q('#ez-overlay').hidden ? q('#ez-overlay') : root;
+  return [...dialog.querySelectorAll('button, select, input')].filter(element => {
     const rect = element.getBoundingClientRect();
     return rect.width > 0 && rect.height > 0 && !element.disabled && !element.closest('[inert]');
   });
 }
 function focus(element) {
   root.querySelectorAll('.ez-controller-focus').forEach(el => el.classList.remove('ez-controller-focus'));
-  if (element) { activeControl = element; element.classList.add('ez-controller-focus'); element.focus({ preventScroll: true }); }
+  if (element) { activeControl = element; element.classList.add('ez-controller-focus'); element.focus({ preventScroll: true }); if (element.closest('#fs-iptv-modal')) element.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
 }
 function move(direction) {
   const controls = visibleControls();
@@ -27,9 +27,11 @@ function cycleSource(select, amount) {
   select.selectedIndex = (select.selectedIndex + amount + select.options.length) % select.options.length;
   const pane = select.dataset.screen;
   select.dispatchEvent(new Event('change', { bubbles: true }));
-  focus(q('[data-screen="' + pane + '"]'));
+  focus(pane === undefined ? select : q('[data-screen="' + pane + '"]'));
 }
 function action(name) {
+  if (!q('#fs-iptv-modal').hidden && name === 'back') { root.fieldscreenIptv.close(); return; }
+  if (!q('#fs-iptv-modal').hidden && ['director','multiview','audio','layout','demo'].includes(name)) return;
   if (!q('#ez-launch').hidden) { if (name === 'accept' || name === 'back') q('#ez-enter').click(); return; }
   const current = document.activeElement;
   if (['up','down','left','right'].includes(name)) {
@@ -71,7 +73,7 @@ function poll(now) {
 }
 root.addEventListener('keydown', event => {
   if (!q('#ez-launch').hidden || !q('#ez-overlay').hidden) return;
-  if (event.key.startsWith('Arrow') && !event.target.matches('select')) {
+  if (event.key.startsWith('Arrow') && !event.target.matches('select,input,textarea')) {
     event.preventDefault(); move(event.key.slice(5).toLowerCase());
   }
 });

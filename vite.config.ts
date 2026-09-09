@@ -3,6 +3,9 @@ import tailwindcss from '@tailwindcss/postcss';
 import vinext from 'vinext';
 import { defineConfig } from 'vite';
 import hostingConfig from './.openai/hosting.json';
+import { createRequire } from 'node:module';
+import path from 'node:path';
+const iptvModule = createRequire(import.meta.url)(path.resolve(process.cwd(), 'desktop/iptv.cjs'));
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
   '00000000-0000-4000-8000-000000000000';
@@ -50,6 +53,14 @@ export default defineConfig(async () => {
       ? { watch: { useFsEvents: false, usePolling: true } }
       : undefined,
     plugins: [
+      {
+        name: 'fieldscreen-local-iptv',
+        configureServer(server) {
+          const service = iptvModule.createIPTV();
+          server.middlewares.use((req, res, next) => { service.handle(req, res, next); });
+          server.httpServer?.once('close', () => service.close());
+        },
+      },
       vinext(),
       sites(),
       cloudflare({

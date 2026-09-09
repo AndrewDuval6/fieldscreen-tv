@@ -1,0 +1,304 @@
+const http = require('node:http');
+const { randomBytes } = require('node:crypto');
+const { Readable } = require('node:stream');
+const { pipeline } = require('node:stream/promises');
+const { readFile } = require('node:fs/promises');
+const path = require('node:path');
+const { guideResponse } = require('./guide.cjs');
+
+const PREFIX = '/preview/iptv/';
+const LIMIT = 12 * 1024 * 1024;
+const MAX_CHANNELS = 50000;
+const token = () => randomBytes(24).toString('hex');
+const clean = (value, fallback = '') => String(value ?? fallback).replace(/[\u0000-\u001f]/g, '').slice(0, 200);
+class PublicError extends Error {}
+
+function webURL(value, base) {
+  let url;
+  try { url = new URL(value, base); } catch { throw new PublicError('Enter a complete http:// or https:// provider address.'); }
+  if (!['http:', 'https:'].includes(url.protocol)) throw new PublicError('Only HTTP and HTTPS streams are supported.');
+  if (url.href.length > 8192) throw new PublicError('The provider address is too long.');
+  url.hash = '';
+  return url;
+}
+
+function parseM3U(text, base) {
+  if (!text.replace(/^\uFEFF/, '').trimStart().startsWith('#EXTM3U')) throw new PublicError('This is not an M3U channel playlist.');
+  if (/#EXT-X-(?:TARGETDURATION|STREAM-INF|MEDIA-SEQUENCE):/.test(text)) throw new PublicError('This is one HLS video. Import your provider’s channel playlist instead.');
+  const channels = [], seen = new Set();
+  let info = null, group = '';
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (line.startsWith('#EXTINF:')) {
+      const match = line.match(/^#EXTINF:(?:[^,"']|"[^"]*"|'[^']*')*,(.*)$/);
+      const attributes = Object.fromEntries([...line.matchAll(/([\w-]+)=(?:"([^"]*)"|'([^']*)')/g)].map(m => [m[1], m[2] ?? m[3]]));
+      info = { name: clean(match?.[1] || attributes['tvg-name'], 'Channel'), group: clean(attributes['group-title'], 'Other'), epgId: clean(attributes['tvg-id']) };
+      group = '';
+    } else if (line.startsWith('#EXTGRP:')) group = clean(line.slice(8));
+    else if (line && !line.startsWith('#')) {
+      try {
+        // VLC pipe/header syntax cannot be safely translated into browser playback.
+        if (line.includes('|')) { info = null; continue; }
+        const url = webURL(line, base).href;
+        if (!seen.has(url)) {
+          channels.push({ name: info?.name || `Channel ${channels.length + 1}`, group: group || info?.group || 'Other', epgId: info?.epgId || '', url });
+          seen.add(url);
+        }
+      } catch { /* Skip non-web entries without disclosing the private URL. */ }
+      info = null; group = '';
+    }
+    if (channels.length >= MAX_CHANNELS) break;
+  }
+  if (!channels.length) throw new PublicError('No supported HTTP channels were found in this playlist.');
+  return channels;
+}
+
+function rewriteManifest(text, base, register) {
+  if (/#EXT-X-DEFINE:/.test(text)) throw new PublicError('This provider uses HLS variables that are not supported yet.');
+  const rewrite = value => register(webURL(value, base).href);
+  return text.split(/\r?\n/).map(line => {
+    if (!line.trim()) return line;
+    if (!line.startsWith('#')) return rewrite(line.trim());
+    return line.replace(/\bURI="([^"]+)"/g, (_match, uri) => `URI="${rewrite(uri)}"`);
+  }).join('\n');
+}
+
+async function limitedText(response, limit = LIMIT) {
+  if (Number(response.headers.get('content-length')) > limit) { await response.body?.cancel(); throw new PublicError('The provider response is too large.'); }
+  const reader = response.body?.getReader();
+  if (!reader) return '';
+  const chunks = []; let length = 0;
+  try {
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      length += value.length;
+      if (length > limit) throw new PublicError('The provider response is too large.');
+      chunks.push(value);
+    }
+  } catch (error) { await reader.cancel().catch(() => {}); throw error; }
+  return Buffer.concat(chunks).toString('utf8');
+}
+
+async function upstream(value, { signal, range, timeout = 25000 } = {}) {
+  let url = webURL(value);
+  const combined = timeout ? (signal ? AbortSignal.any([signal, AbortSignal.timeout(timeout)]) : AbortSignal.timeout(timeout)) : signal;
+  for (let redirects = 0; redirects < 6; redirects++) {
+    const headers = { 'User-Agent': 'FieldScreenTV/0.1', Accept: '*/*' };
+    if (range) headers.Range = range;
+    const target = new URL(url);
+    if (target.username || target.password) {
+      headers.Authorization = 'Basic ' + Buffer.from(`${decodeURIComponent(target.username)}:${decodeURIComponent(target.password)}`).toString('base64');
+      target.username = ''; target.password = '';
+    }
+    const headerTimeout = new AbortController();
+    const timer = setTimeout(() => headerTimeout.abort(), 25000); timer.unref();
+    let response;
+    try { response = await fetch(target, { headers, signal: combined ? AbortSignal.any([combined, headerTimeout.signal]) : headerTimeout.signal, redirect: 'manual' }); }
+    finally { clearTimeout(timer); }
+    if ([301, 302, 303, 307, 308].includes(response.status)) {
+      await response.body?.cancel();
+      const location = response.headers.get('location');
+      if (!location) throw new PublicError('The provider returned an incomplete redirect.');
+      url = webURL(location, url); continue;
+    }
+    if (!response.ok) {
+      await response.body?.cancel();
+      throw new PublicError([401, 403].includes(response.status) ? 'The provider refused access. Check your login and subscription.' : `The provider returned error ${response.status}. Try again shortly.`);
+    }
+    return { response, url: url.href };
+  }
+  throw new PublicError('The provider redirected too many times.');
+}
+
+function createIPTV({ vault } = {}) {
+  let channels = [], metadata = null, connecting = false, generation = 0, guideURL = null, guideLoaded = 0, guideJob = null;
+  const resources = new Map(), reverse = new Map(), pending = new Set();
+  function clear() {
+    generation++;
+    for (const controller of pending) controller.abort();
+    pending.clear(); channels = []; metadata = null; resources.clear(); reverse.clear(); guideURL = null; guideLoaded = 0; guideJob = null;
+  }
+  function register(url, pinned = false) {
+    let id = reverse.get(url);
+    if (!id) { id = token(); reverse.set(url, id); resources.set(id, { url, pinned }); }
+    if (pinned) resources.get(id).pinned = true;
+    // HLS playlists rotate continuously: retain roots, bound the segment capability cache.
+    if (resources.size > MAX_CHANNELS + 8000) {
+      for (const [key, item] of resources) {
+        if (!item.pinned) { resources.delete(key); reverse.delete(item.url); }
+        if (resources.size <= MAX_CHANNELS + 4000) break;
+      }
+    }
+    return PREFIX + 'stream/' + id;
+  }
+  async function status() { return { connected: Boolean(metadata), ...metadata, channels, canRemember: Boolean(vault?.available()), saved: Boolean(await vault?.exists()) }; }
+  async function connect(config) {
+    if (connecting) throw new PublicError('A provider connection is already in progress.');
+    connecting = true;
+    const epoch = generation, controller = new AbortController(); pending.add(controller);
+    const getText = async url => { const result = await upstream(url, { signal: controller.signal }); return { text: await limitedText(result.response), url: result.url }; };
+    const getJSON = async url => { const { text } = await getText(url); try { return JSON.parse(text); } catch { throw new PublicError('The provider did not return a valid channel response.'); } };
+    try {
+      let entries, meta, guide = config.guideUrl ? webURL(config.guideUrl).href : null;
+      if (config.type === 'xtream') {
+        const base = webURL(config.url);
+        base.search = ''; base.username = ''; base.password = '';
+        base.pathname = base.pathname.replace(/\/(?:player_api|get)\.php\/?$/, '').replace(/\/$/, '') + '/';
+        if (!config.username || !config.password) throw new PublicError('Enter your provider username and password.');
+        const apiURL = action => {
+          const u = new URL('player_api.php', base);
+          u.searchParams.set('username', String(config.username)); u.searchParams.set('password', String(config.password));
+          if (action) u.searchParams.set('action', action); return u.href;
+        };
+        const account = await getJSON(apiURL());
+        if (Number(account?.user_info?.auth) !== 1 || (account.user_info.status && account.user_info.status !== 'Active')) throw new PublicError('The provider did not accept this account, or the subscription is inactive.');
+        const formats = account.user_info.allowed_output_formats;
+        const extension = Array.isArray(formats) && formats.length && !formats.includes('m3u8') && formats.includes('ts') ? 'ts' : 'm3u8';
+        const categories = await getJSON(apiURL('get_live_categories'));
+        const streams = await getJSON(apiURL('get_live_streams'));
+        if (!Array.isArray(streams)) throw new PublicError('The provider did not return a channel list.');
+        const groups = new Map((Array.isArray(categories) ? categories : []).map(c => [String(c.category_id), clean(c.category_name)]));
+        entries = streams.filter(c => /^\d+$/.test(String(c.stream_id))).slice(0, MAX_CHANNELS).map(c => ({
+          name: clean(c.name, 'Channel'), group: groups.get(String(c.category_id)) || 'Other', epgId: clean(c.epg_channel_id),
+          url: new URL(`live/${encodeURIComponent(config.username)}/${encodeURIComponent(config.password)}/${c.stream_id}.${extension}`, base).href,
+        }));
+        if (!entries.length) throw new PublicError('This account has no live channels.');
+        meta = { provider: base.hostname, type: 'xtream', maxConnections: Math.max(0, Number(account.user_info.max_connections) || 0), demo: false };
+        const epg = new URL('xmltv.php', base); epg.searchParams.set('username', config.username); epg.searchParams.set('password', config.password); guide = guide || epg.href;
+      } else if (config.type === 'm3u') {
+        if (typeof config.playlist === 'string' && config.playlist.trim()) {
+          if (Buffer.byteLength(config.playlist) > LIMIT) throw new PublicError('Choose a playlist smaller than 12 MB.');
+          entries = parseM3U(config.playlist); meta = { provider: 'Imported playlist', type: 'm3u', demo: false };
+          const link = config.playlist.split(/\r?\n/)[0].match(/(?:x-tvg-url|url-tvg|tvg-url)="([^"]+)"/i)?.[1];
+          if (!guide && link) { try { guide = webURL(link).href; } catch {} }
+        } else {
+          const original = webURL(config.url); const result = await getText(original.href);
+          entries = parseM3U(result.text, result.url); meta = { provider: original.hostname, type: 'm3u', demo: false };
+          const link = result.text.split(/\r?\n/)[0].match(/(?:x-tvg-url|url-tvg|tvg-url)="([^"]+)"/i)?.[1];
+          if (!guide && link) { try { guide = webURL(link, result.url).href; } catch {} }
+        }
+      } else if (config.type === 'demo') {
+        entries = [{ name: 'Sample video · Big Buck Bunny', group: 'Playback test', url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8' }];
+        meta = { provider: 'Mux public test stream', type: 'demo', demo: true };
+      } else throw new PublicError('Choose Xtream login or an M3U playlist.');
+      if (epoch !== generation) throw new PublicError('Connection cancelled.');
+      // Build first, so a failed new login never destroys the current connection.
+      pending.delete(controller); clear();
+      channels = entries.map(entry => ({ id: token(), name: entry.name, group: entry.group, epgId: entry.epgId || '', programs: [], stream: register(entry.url, true), format: /\.(mp4|webm)(?:\?|$)/i.test(entry.url) ? 'file' : /\.m3u8(?:\?|$)|[?&](?:output|format)=m3u8/i.test(entry.url) ? 'hls' : /\.ts(?:\?|$)/i.test(entry.url) ? 'mpegts' : 'auto' }));
+      guideURL = guide; metadata = { ...meta, hasGuide: Boolean(guide) };
+      let storageNote = '';
+      try {
+        if (config.remember && vault?.available() && config.type !== 'demo') await vault.save(config);
+        else { await vault?.remove(); if (config.remember) storageNote = 'Connected for this session. A system keyring is required to remember a provider.'; }
+      } catch { storageNote = 'Connected for this session, but the provider could not be saved.'; }
+      return { ...await status(), storageNote };
+    } finally { pending.delete(controller); connecting = false; }
+  }
+  async function loadGuide(force) {
+    if (!guideURL || !metadata) return { channels, guideNote: 'No TV guide was supplied. Search channel names, or add an XMLTV guide URL in provider setup.' };
+    if (!force && guideLoaded > Date.now() - 15 * 60000) return { channels, guideUpdated: guideLoaded };
+    if (guideJob) return guideJob;
+    const epoch = generation, controller = new AbortController(); pending.add(controller);
+    const job = (async () => {
+      try {
+        const { response, url } = await upstream(guideURL, { signal: controller.signal, timeout: 90000 });
+        const guide = await guideResponse(response, url, new Set(channels.map(c => c.epgId).filter(Boolean)));
+        if (epoch !== generation) throw new PublicError('The provider connection changed.');
+        channels = channels.map(channel => ({ ...channel, programs: guide.get(channel.epgId) || [] })); guideLoaded = Date.now();
+        return { channels, guideUpdated: guideLoaded, guideNote: guide.size ? '' : 'The guide has no matching current listings. Channels are still available.' };
+      } catch { return { channels, guideNote: 'The TV guide is unavailable or unsupported. You can still search and play channels.' }; }
+      finally { controller.abort(); pending.delete(controller); if (guideJob === job) guideJob = null; }
+    })();
+    guideJob = job; return job;
+  }
+  function json(res, code, value) {
+    res.writeHead(code, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(JSON.stringify(value));
+  }
+  async function handle(req, res, next = () => { res.writeHead(404); res.end(); }) {
+    const route = req.url?.split('?')[0];
+    if (!route?.startsWith(PREFIX)) return next();
+    res.setHeader('Cache-Control', 'no-store'); res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+    let host;
+    try { host = new URL('http://' + req.headers.host); } catch { return json(res, 403, { error: 'Local access only.' }); }
+    if (!['127.0.0.1', 'localhost', '[::1]'].includes(host.hostname) || (req.headers.origin && req.headers.origin !== host.origin) || req.headers['sec-fetch-site'] === 'cross-site') return json(res, 403, { error: 'Local access only.' });
+    try {
+      if (route.startsWith(PREFIX + 'stream/')) {
+        if (!['GET', 'HEAD'].includes(req.method)) return json(res, 405, { error: 'Method not allowed.' });
+        const resource = resources.get(route.slice((PREFIX + 'stream/').length));
+        if (!resource) return json(res, 404, { error: 'This stream session has ended.' });
+        if (req.headers.range && !/^bytes=\d*-\d*$/.test(req.headers.range)) return json(res, 416, { error: 'Unsupported byte range.' });
+        const controller = new AbortController(); pending.add(controller);
+        const abort = () => controller.abort(); res.on('close', abort);
+        try {
+          const { response, url } = await upstream(resource.url, { signal: controller.signal, range: req.headers.range, timeout: resource.pinned && !/\.m3u8(?:\?|$)/i.test(resource.url) ? 0 : 120000 });
+          const contentType = response.headers.get('content-type') || 'application/octet-stream';
+          if (/mpegurl/i.test(contentType) || /\.m3u8(?:\?|$)/i.test(url) || /\.m3u8(?:\?|$)/i.test(resource.url)) {
+            const manifest = await limitedText(response);
+            if (!manifest.trimStart().startsWith('#EXTM3U')) throw new PublicError('This channel did not return a playable HLS stream.');
+            const body = rewriteManifest(manifest, url, register);
+            res.writeHead(200, { 'Content-Type': 'application/vnd.apple.mpegurl' }); res.end(req.method === 'HEAD' ? undefined : body);
+          } else {
+            // Serve only media bytes. Never execute HTML or scripts returned by a provider.
+            const safeType = /^(video\/|audio\/|application\/(?:octet-stream|mp4))/.test(contentType) ? contentType : 'application/octet-stream';
+            const headers = { 'Content-Type': safeType, 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; sandbox" };
+            for (const name of ['content-length', 'content-range', 'accept-ranges']) if (response.headers.has(name)) headers[name] = response.headers.get(name);
+            res.writeHead(response.status, headers);
+            if (req.method === 'HEAD') { await response.body?.cancel(); res.end(); }
+            else if (response.body) await pipeline(Readable.fromWeb(response.body), res);
+            else res.end();
+          }
+        } finally { pending.delete(controller); res.off('close', abort); }
+        return;
+      }
+      if (req.headers['x-fieldscreen'] !== '1') return json(res, 403, { error: 'Open IPTV from FieldScreen TV.' });
+      if (req.method === 'GET' && route === PREFIX + 'status') return json(res, 200, await status());
+      if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed.' });
+      const chunks = []; let size = 0;
+      for await (const chunk of req) {
+        size += chunk.length;
+        if (size > LIMIT + 1024) return json(res, 413, { error: 'Choose a playlist smaller than 12 MB.' });
+        chunks.push(chunk);
+      }
+      let config;
+      try { config = JSON.parse(Buffer.concat(chunks).toString() || '{}'); } catch { return json(res, 400, { error: 'Invalid request.' }); }
+      if (!config || typeof config !== 'object' || Array.isArray(config)) return json(res, 400, { error: 'Invalid request.' });
+      if (route === PREFIX + 'connect') return json(res, 200, await connect(config));
+      if (route === PREFIX + 'guide') return json(res, 200, await loadGuide(Boolean(config.force)));
+      if (route === PREFIX + 'resume') {
+        const saved = await vault?.load();
+        if (!saved) throw new PublicError('No saved provider is available. Enter your login again.');
+        return json(res, 200, await connect({ ...saved, remember: true }));
+      }
+      if (route === PREFIX + 'disconnect') { clear(); await vault?.remove(); return json(res, 200, await status()); }
+      return json(res, 404, { error: 'Unknown request.' });
+    } catch (error) {
+      if (!res.headersSent && !res.destroyed) json(res, error instanceof PublicError ? 400 : 502, { error: error instanceof PublicError ? error.message : 'Could not reach the provider. Check the address and connection, then try again.' });
+      else res.destroy();
+    }
+  }
+  return { handle, close: clear };
+}
+
+async function startLocalServer({ directory, vault, port = 0 } = {}) {
+  const iptv = createIPTV({ vault });
+  const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.woff2': 'font/woff2', '.txt': 'text/plain' };
+  const server = http.createServer((req, res) => {
+    iptv.handle(req, res, async () => {
+      try {
+        const url = new URL(req.url, 'http://127.0.0.1');
+        const relative = decodeURIComponent(url.pathname.replace(/^\/preview\//, ''));
+        const file = path.resolve(directory, relative);
+        if (!['GET', 'HEAD'].includes(req.method) || !url.pathname.startsWith('/preview/') || !file.startsWith(path.resolve(directory) + path.sep) || !types[path.extname(file)]) { res.writeHead(404); return res.end(); }
+        const body = await readFile(file);
+        res.writeHead(200, { 'Content-Type': types[path.extname(file)], 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' });
+        res.end(req.method === 'HEAD' ? undefined : body);
+      } catch { res.writeHead(404); res.end(); }
+    });
+  });
+  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); });
+  return { url: `http://127.0.0.1:${server.address().port}/preview/index.html`, server, close() { iptv.close(); server.closeAllConnections(); server.close(); } };
+}
+
+module.exports = { createIPTV, startLocalServer, parseM3U, rewriteManifest, webURL };
