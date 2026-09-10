@@ -30,6 +30,11 @@ function cycleSource(select, amount) {
   focus(pane === undefined ? (select.id ? q('#' + CSS.escape(select.id)) : select) : q('[data-screen="' + pane + '"]'));
 }
 function action(name) {
+  if (root.fieldscreenPanes?.slot() != null) {
+    if (name === 'back') { root.fieldscreenPanes.exit(); return; }
+    if (name === 'director' || name === 'multiview') root.fieldscreenPanes.exit();
+    else if (name === 'layout' || name === 'audio') return;
+  }
   if (!q('#fs-iptv-modal').hidden && name === 'back') { root.fieldscreenIptv.close(); return; }
   if (!q('#fs-iptv-modal').hidden && ['director','multiview','audio','layout','demo'].includes(name)) return;
   if (!q('#ez-launch').hidden) { if (name === 'accept' || name === 'back') q('#ez-enter').click(); return; }

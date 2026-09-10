@@ -50,6 +50,11 @@ else {
       const fullscreen = !window.isFullScreen(); window.setFullScreen(fullscreen);
       return { fullscreen };
     });
+    ipcMain.handle('fieldscreen:set-fullscreen', (event, fullscreen) => {
+      if (!isMainFrame(event) || typeof fullscreen !== 'boolean') throw new Error('Main window only');
+      window.setFullScreen(fullscreen);
+      return { fullscreen: window.isFullScreen() };
+    });
     for (const name of ['enter-full-screen', 'leave-full-screen']) window.on(name, () => {
       window.webContents.send('fieldscreen:window-state', { fullscreen: window.isFullScreen() });
     });

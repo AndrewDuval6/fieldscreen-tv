@@ -53,6 +53,7 @@ function message(text, error = false, loading = false) {
 }
 function setView(next) { view = next; q('#fs-provider-view').hidden = next !== 'setup'; q('#fs-library-view').hidden = next !== 'library'; q('#fs-iptv-title').textContent = next === 'setup' ? 'Connect your provider' : 'Find your game'; }
 function open(slot = 0, query = '', game = null) {
+  root.fieldscreenPanes?.exit();
   watchRevision++;
   matchedGame = game; q('#fs-channel-search').value = query; q('#fs-channel-group').value = ''; filter = 'all'; page = 0;
   libraryMode = game || query ? 'channels' : 'games';
@@ -365,9 +366,10 @@ function createPlayer(channel) {
 }
 function place() {
   const box = root.getBoundingClientRect();
+  const expanded = root.fieldscreenPanes?.slot();
   players.forEach(player => {
     const mount = q(`.fs-stream-mount[data-stream-slot="${player.slot}"]`), rect = mount?.getBoundingClientRect();
-    player.element.hidden = !rect?.width || root.classList.contains('ez-director');
+    player.element.hidden = !rect?.width || root.classList.contains('ez-director') || expanded != null && expanded !== player.slot;
     if (rect?.width) Object.assign(player.element.style, { left: rect.left - box.left + 'px', top: rect.top - box.top + 'px', width: rect.width + 'px', height: rect.height + 'px' });
   });
 }
@@ -375,7 +377,7 @@ function sync() {
   const count = api.state.layout === 'single' ? 1 : api.state.layout === 'split' ? 2 : 4;
   const desired = api.state.view === 'watch' && !root.classList.contains('ez-director') ? Array.from({ length: count }, (_, slot) => ({ slot, channel: channelFor(slot) })).filter(item => item.channel) : [];
   players = reconcilePlayers(players, desired, createPlayer, player => player.destroy());
-  if (players.length && !players.some(p => p.slot === api.state.audio)) api.state.audio = players[0].slot;
+  if (players.length && root.fieldscreenPanes?.slot() == null && !players.some(p => p.slot === api.state.audio)) api.state.audio = players[0].slot;
   players.forEach(player => { player.video.muted = player.slot !== api.state.audio; });
   root.querySelectorAll('[data-audio]').forEach(b => { const active = Number(b.dataset.audio) === api.state.audio; b.setAttribute('aria-pressed', String(active)); b.closest('.ez-feed')?.classList.toggle('has-audio', active); if (b.closest('.fs-iptv-feed')) b.textContent = active ? 'AUDIO FOCUS' : 'SELECT AUDIO'; });
   const note = q('.ez-watch-note p');
@@ -383,6 +385,7 @@ function sync() {
   requestAnimationFrame(place);
 }
 root.fieldscreenIptv = {
+  refreshLayout: sync,
   openGame: watchGame,
   connected: () => Boolean(connection.connected),
   open, close,

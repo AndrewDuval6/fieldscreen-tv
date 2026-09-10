@@ -8,7 +8,7 @@
 
 A television-first NFL control room for game day. Field positions, a featured game, and configurable video/data panes in one 16:9 screen.
 
-**Development preview · v0.1.0-preview.6.** ESPN scores, schedules, all 32 teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. IPTV playback and XMLTV guide matching are included. Wireless casting is still planned.
+**Development preview · v0.1.0-preview.7.** ESPN scores, schedules, all 32 teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. IPTV playback and XMLTV guide matching are included. Wireless casting is still planned.
 
 ## Steam Deck is the TV console
 
@@ -20,9 +20,9 @@ The intended setup is Steam Deck connected to the TV, an Xbox controller, and a 
 
 Linux preview builds are packaged as an **x64 AppImage**, plus a portable `.tar.gz` alternative. They bundle the runtime, fonts, icons, and preview artwork; Node.js and a development server are not needed to run a packaged download.
 
-[**Download the Linux preview**](https://github.com/AndrewDuval6/fieldscreen-tv/releases/tag/v0.1.0-preview.6)
+[**Download the Linux preview**](https://github.com/AndrewDuval6/fieldscreen-tv/releases/tag/v0.1.0-preview.7)
 
-Choose `FieldScreen-TV-0.1.0-preview.6-Linux-x86_64.AppImage`, or the portable `.tar.gz` alternative.
+Choose `FieldScreen-TV-0.1.0-preview.7-Linux-x86_64.AppImage`, or the portable `.tar.gz` alternative.
 
 To launch on Steam Deck:
 
@@ -74,7 +74,7 @@ The installed AppImage has a stable path at `~/Applications/FieldScreen-TV.AppIm
 5. Click a live game tile or **Watch game**. FieldScreen matches the guide and starts the broadcast, briefly checking available feeds when more than one matches.
 6. Use **RedZone** beside the screen-layout buttons to open an available RedZone feed in the main pane without changing your layout.
 
-The channel picker is a fallback when the guide cannot confirm coverage. You can also open **TV guide · IPTV** or **Channels** for manual selection: search the whole lineup, choose a destination screen, and select a channel. RedZone availability depends on the provider's current lineup and guide.
+The channel picker is a fallback when the guide cannot confirm coverage. You can also open **TV guide · IPTV** or **Channels** for manual selection: search the whole lineup, choose a destination screen, and select a channel. RedZone availability depends on the provider's current lineup and guide. The expand icon on any pane fills the display with that pane. Use **Back to screens**, **Esc**, or controller **B** to restore the existing layout and audio focus; streams keep their player instances.
 
 **Refresh channels** reloads your M3U URL or Xtream lineup using the current connection, including session-only connections. It updates channel names and groups, adds new channels, removes missing ones, and shows the last successful update time. Channels whose stream URLs stay the same keep playing; removed or changed streams return their panes to the dashboard. A failed refresh keeps the previous lineup. For an imported M3U file, the button asks you to select an updated file; a local file cannot retrieve provider changes by itself. Remembered file imports update their encrypted saved copy.
 
