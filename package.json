@@ -1,6 +1,6 @@
 {
   "name": "fieldscreen-tv-project",
-  "version": "0.1.0-preview.7",
+  "version": "0.1.0-preview.8",
   "private": true,
   "engines": {
     "node": ">=22.13.0"

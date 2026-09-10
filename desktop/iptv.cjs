@@ -6,6 +6,7 @@ const { readFile } = require('node:fs/promises');
 const path = require('node:path');
 const { guideResponse } = require('./guide.cjs');
 const { createNFL } = require('./nfl.cjs');
+const { createMLB } = require('./mlb.cjs');
 const { chooseBroadcast } = require('./broadcast.cjs');
 
 const PREFIX = '/preview/iptv/';
@@ -118,7 +119,7 @@ async function upstream(value, { signal, range, timeout = 25000 } = {}) {
 }
 
 function createIPTV({ vault } = {}) {
-  const nfl = createNFL();
+  const nfl = createNFL(), mlb = createMLB();
   let channels = [], metadata = null, activeConfig = null, connecting = false, generation = 0, channelRevision = 0, guideURL = null, guideLoaded = 0, guideJob = null, guideController = null, guideState = {};
   const resources = new Map(), reverse = new Map(), pending = new Set();
   const broadcastCache = new Map(); let broadcastJob = false;
@@ -280,6 +281,7 @@ function createIPTV({ vault } = {}) {
     res.writeHead(code, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(JSON.stringify(value));
   }
   async function handle(req, res, next = () => { res.writeHead(404); res.end(); }) {
+    if (req.url?.startsWith('/preview/mlb/')) return mlb.handle(req, res, next);
     if (req.url?.startsWith('/preview/nfl/')) return nfl.handle(req, res, next);
     const route = req.url?.split('?')[0];
     if (!route?.startsWith(PREFIX)) return next();
@@ -367,7 +369,7 @@ function createIPTV({ vault } = {}) {
       else res.destroy();
     }
   }
-  return { handle, close() { clear(); nfl.close(); } };
+  return { handle, close() { clear(); nfl.close(); mlb.close(); } };
 }
 
 async function startLocalServer({ directory, vault, port = 0 } = {}) {

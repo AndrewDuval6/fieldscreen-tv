@@ -6,9 +6,9 @@
 
 [**Website & install instructions — fieldscreentv.org**](https://fieldscreentv.org)
 
-A television-first NFL control room for game day. Field positions, a featured game, and configurable video/data panes in one 16:9 screen.
+A television-first sports control room, starting with NFL and MLB. Field positions, a featured game, and configurable video/data panes in one 16:9 screen.
 
-**Development preview · v0.1.0-preview.7.** ESPN scores, schedules, all 32 teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. IPTV playback and XMLTV guide matching are included. Wireless casting is still planned.
+**Development preview · v0.1.0-preview.8.** ESPN scores, schedules, all 32 NFL teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. MLB scores, daily schedules, all 30 teams, live diamonds, standings, wild-card races, and postseason series are connected. IPTV playback and XMLTV guide matching are included. Wireless casting is still planned.
 
 ## Steam Deck is the TV console
 
@@ -20,9 +20,9 @@ The intended setup is Steam Deck connected to the TV, an Xbox controller, and a 
 
 Linux preview builds are packaged as an **x64 AppImage**, plus a portable `.tar.gz` alternative. They bundle the runtime, fonts, icons, and preview artwork; Node.js and a development server are not needed to run a packaged download.
 
-[**Download the Linux preview**](https://github.com/AndrewDuval6/fieldscreen-tv/releases/tag/v0.1.0-preview.7)
+[**Download the Linux preview**](https://github.com/AndrewDuval6/fieldscreen-tv/releases/tag/v0.1.0-preview.8)
 
-Choose `FieldScreen-TV-0.1.0-preview.7-Linux-x86_64.AppImage`, or the portable `.tar.gz` alternative.
+Choose `FieldScreen-TV-0.1.0-preview.8-Linux-x86_64.AppImage`, or the portable `.tar.gz` alternative.
 
 To launch on Steam Deck:
 
@@ -49,7 +49,7 @@ The AppImage opens full screen for TV use. The installer’s desktop shortcut op
 | Y | Change multiview layout; toggle automatic focus in Director |
 | LB / RB | Director / Multiview |
 | Right stick | Scroll schedules, statistics, scoreboards, or the guide |
-| Menu | Refresh NFL scores in Director |
+| Menu | Refresh scores in Director |
 
 Standard-mapped controllers use the browser Gamepad API. Mouse and keyboard controls also work. Automated tests cover navigation, provider import, stream proxying, guide matching, credential-storage policy, and player reuse; hardware compatibility is not yet verified. Entering provider details may need a keyboard or Steam’s on-screen keyboard.
 
@@ -78,7 +78,7 @@ The channel picker is a fallback when the guide cannot confirm coverage. You can
 
 **Refresh channels** reloads your M3U URL or Xtream lineup using the current connection, including session-only connections. It updates channel names and groups, adds new channels, removes missing ones, and shows the last successful update time. Channels whose stream URLs stay the same keep playing; removed or changed streams return their panes to the dashboard. A failed refresh keeps the previous lineup. For an imported M3U file, the button asks you to select an updated file; a local file cannot retrieve provider changes by itself. Remembered file imports update their encrypted saved copy.
 
-The guide joins XMLTV programme channel IDs to the playlist's `tvg-id` (or Xtream `epg_channel_id`). XML and compressed feeds are detected from their contents, including short provider links without a file extension. **Your games** automatically ranks live and upcoming NFL coverage across the whole lineup. **Watch game** selects a current guide listing that names both teams; **Check coverage** shows alternatives when only a team, channel name, or scheduled network matches. Network suggestions are marked as unconfirmed. Matching uses text and kickoff times, not video recognition.
+The guide joins XMLTV programme channel IDs to the playlist's `tvg-id` (or Xtream `epg_channel_id`). XML and compressed feeds are detected from their contents, including short provider links without a file extension. **Your games** automatically ranks live and upcoming NFL and MLB coverage across the whole lineup. **Watch game** selects a current guide listing that names both teams; **Check coverage** shows alternatives when only a team, channel name, or scheduled network matches. Network suggestions are marked as unconfirmed. Matching uses text and kickoff times, not video recognition.
 
 **All channels** searches the entire lineup and the next 48 hours of guide listings. **Ctrl+F** focuses this search. Lineups of up to 500 channels appear in one scrollable list; larger lineups are filtered before pagination. **Update TV guide** lets you replace only the guide link while keeping channels connected. Guide refresh runs every 15 minutes and after channel refresh. Download failures keep the last available listings, report the reason, and honor a retry delay.
 
@@ -86,7 +86,19 @@ M3U/XMLTV files can contain account credentials. Enter them only in the app. The
 
 Standard HTTP HLS and MPEG-TS playback are included, plus browser-compatible MP4/WebM links. Video/audio codecs must be supported by the bundled browser; H.264/AAC is the most broadly compatible combination. DRM-protected streams, UDP/RTSP, proprietary headers, and provider-specific authentication beyond the supplied URL/login are not implemented. A public **Try sample video** option checks a Mux-hosted Big Buck Bunny stream; it is not an NFL broadcast.
 
-Each visible video pane uses a provider connection. Four games normally require four allowed connections and sufficient bandwidth/decoding performance. Moving a game to the main pane preserves its player. Changing to a smaller layout stops hidden streams; selecting another view or disconnecting stops the watch-wall players. Only one video is audible. NFL scorecards, the league scoreboard, and standings remain available alongside live video.
+Each visible video pane uses a provider connection. Four games normally require four allowed connections and sufficient bandwidth/decoding performance. Moving a game to the main pane preserves its player. Changing to a smaller layout stops hidden streams; selecting another view or disconnecting stops the watch-wall players. Only one video is audible. NFL and MLB scorecards, league scoreboards, and standings remain available alongside live video.
+
+## Baseball
+
+Use the **NFL / MLB** selector in the top bar to switch sports. Your last sport is remembered on this device. Both sports share your saved IPTV provider, guide, fullscreen controls, and multiview. Choose NFL or MLB scorecards individually in each pane.
+
+**Baseball Director** prioritizes live games, close late innings, and bases-loaded situations. The diamond shows reported occupied bases, batter, pitcher, balls, strikes, and outs. Between innings and after a final, stale runners and counts are hidden. Fields are schematic, not player tracking. **Game details** adds inning scoring, runs/hits/errors, latest at-bats, game batting statistics, and the current pitcher's pitch count when reported.
+
+**Schedule** browses daily games. Today retains games still live from the previous day after midnight Eastern. **Standings** includes all six divisions, AL/NL selection, wild-card races, games back, run differential, and last-ten records. **Teams** offers hitting, pitching, and fielding season statistics. **Postseason** groups MLB's published games into series and rounds, keeps placeholder teams and times marked TBD, and identifies games that are only needed if a series continues. Series wins count completed games; no projected matchups are presented as confirmed.
+
+MLB scores and open game details refresh every 30 seconds while visible. Standings and team statistics are cached for five minutes; postseason schedules for one minute. Failures keep the last successful update with a cached indicator. The [MLB Stats API](https://statsapi.mlb.com/api/v1/schedule?sportId=1) currently provides publicly reachable data without a key. It is not an availability guarantee or a grant of redistribution rights. Provider credentials and guide contents stay local and are not sent to MLB. Data may lag video.
+
+The same **Watch game** action checks both teams and the event time against XMLTV before streaming. It rejects explicitly wrong-sport listings, replays, and the wrong game number when a doubleheader is labeled. Team channels without a confirmed current guide match remain suggestions.
 
 ## NFL data
 
@@ -109,7 +121,7 @@ The installed app retrieves and caches data locally. IPTV guide contents and pro
 - Detailed proportioned fields with home-team end zones, yard numbers, NFL hash marks, and reported possession markers.
 - Schedules, eight-division standings, game details, and all 32 teams with historical season statistics.
 - nflverse advanced metrics, including EPA, CPOE, air yards, sacks, and QB hits where published.
-- Full-screen, split, four-pane, and one-plus-three layouts mixing IPTV and NFL data.
+- Full-screen, split, four-pane, and one-plus-three layouts mixing IPTV, NFL, and MLB data.
 - M3U URL/file import, Xtream login, XMLTV matching, team/channel search, and now/next listings.
 - Matchup-to-guide broadcast discovery and real single-pane audio focus.
 - Stadium and Night themes, branded connection loaders, and reduced-motion support.
@@ -132,10 +144,10 @@ npm run desktop
 
 For the browser version, run `npm run dev -- --host 127.0.0.1`. For a Linux download, run `npm run package:linux`. Built packages appear in `release/`. See [preview security scope](SECURITY.md) before using the browser development entry.
 
-`design/tv-preview.html` preserves the approved visual study. `scripts/build-preview.mjs` produces its TV application and bundles the local NFL data and IPTV services. `desktop/` provides the sandboxed Electron shell. `app/` retains the React/Vinext entry point for the full dashboard implementation. The Linux workflow checks the browser build and packages the desktop preview.
+`design/tv-preview.html` preserves the approved visual study. `scripts/build-preview.mjs` produces its TV application and bundles the local sports data and IPTV services. `desktop/` provides the sandboxed Electron shell. `app/` retains the React/Vinext entry point for the full dashboard implementation. The Linux workflow checks the browser build and packages the desktop preview.
 
 ## Artwork and dependencies
 
-The penguin/football emblem and stadium backdrop are original generated artwork. The backdrop is not a photograph of a live game. The logo was created with the built-in image generator; its [prompt](design/logo-prompt.txt) is included for provenance. Field diagrams use reported NFL positions; they are schematic views, not player-tracking data. Fonts are distributed under the licenses included with their packages. Icons come from Lucide. Video playback uses [hls.js](https://github.com/video-dev/hls.js) and [mpegts.js](https://github.com/xqq/mpegts.js); XMLTV parsing uses [saxes](https://github.com/lddubeau/saxes). Their licenses are included in the package. Third-party dependencies retain their respective licenses. This is an independent fan project, not an official NFL or Yahoo product.
+The penguin/football emblem and stadium backdrop are original generated artwork. The backdrop is not a photograph of a live game. The logo was created with the built-in image generator; its [prompt](design/logo-prompt.txt) is included for provenance. Field diagrams use reported NFL positions; they are schematic views, not player-tracking data. Fonts are distributed under the licenses included with their packages. Icons come from Lucide. Video playback uses [hls.js](https://github.com/video-dev/hls.js) and [mpegts.js](https://github.com/xqq/mpegts.js); XMLTV parsing uses [saxes](https://github.com/lddubeau/saxes). Their licenses are included in the package. Third-party dependencies retain their respective licenses. This is an independent fan project, not an official NFL, MLB, or Yahoo product.
 
 The source is published for inspection and download. An open-source license for the project has not been selected; third-party licenses still apply.

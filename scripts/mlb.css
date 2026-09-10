@@ -1,0 +1,44 @@
+#fieldscreen-concept #fs-sport-select{color:#eaffcb;background:#193c2c;border:1px solid #b0df8077;border-radius:5px;font:600 calc(var(--ez-u)*23) 'IBM Plex Mono';padding:calc(var(--ez-u)*10) calc(var(--ez-u)*8);max-width:calc(var(--ez-u)*105);cursor:pointer}
+#fieldscreen-concept:not(.fs-mlb-active) .fs-mlb-tab{display:none}
+#fieldscreen-concept .fs-nfl-controls input[type=date]{color:#eef5dc;color-scheme:dark;background:#143728;border:1px solid var(--fs-line);font:500 calc(var(--ez-u)*24) Inter;padding:calc(var(--ez-u)*10);border-radius:5px}
+#fieldscreen-concept .fs-diamond{display:block;width:100%;height:100%;min-height:0;overflow:visible;filter:drop-shadow(0 8px 16px #021a1599);font-family:'IBM Plex Mono',monospace}
+#fieldscreen-concept.fs-mlb-active .ez-dir-turf{background:radial-gradient(ellipse at 50% 70%,#346b3e44,#071a1c00 70%)}
+#fieldscreen-concept.fs-mlb-active .ez-dir-mini-field{background:radial-gradient(ellipse at 50% 70%,#346b3e33,transparent);min-height:0;overflow:hidden}
+#fieldscreen-concept.fs-mlb-active .ez-dir-mini .fs-diamond{transform:scale(1.13);transform-origin:50% 48%}
+#fieldscreen-concept.fs-mlb-active .ez-dir-mini-head{position:relative;z-index:1}
+#fieldscreen-concept.fs-mlb-active .ez-dir-mini-foot{position:relative;z-index:1}
+#fieldscreen-concept .fs-mlb-detail-diamond{height:calc(var(--ez-u)*360);margin:calc(var(--ez-u)*12) 0}
+#fieldscreen-concept .fs-linescore{width:100%;overflow-x:auto;scrollbar-width:thin}
+#fieldscreen-concept .fs-linescore table{font:500 calc(var(--ez-u)*20) 'IBM Plex Mono';white-space:nowrap}
+#fieldscreen-concept .fs-linescore th,#fieldscreen-concept .fs-linescore td{padding:calc(var(--ez-u)*10) calc(var(--ez-u)*6);min-width:calc(var(--ez-u)*27)}
+#fieldscreen-concept .fs-mlb-network{font:400 calc(var(--ez-u)*18)/1.5 Inter;color:#aac6b8;min-height:calc(var(--ez-u)*28)}
+#fieldscreen-concept .fs-mlb-series-grid{display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--ez-u)*22);align-content:start}
+#fieldscreen-concept .fs-mlb-series-score{display:flex;flex-direction:column;gap:calc(var(--ez-u)*8);font:600 calc(var(--ez-u)*31) 'Barlow Condensed'}
+#fieldscreen-concept .fs-mlb-series-score>span{display:flex;justify-content:space-between;gap:calc(var(--ez-u)*20);padding:calc(var(--ez-u)*12);border-left:3px solid #b2da7f;background:#193d2e}
+#fieldscreen-concept .fs-mlb-series-score b{font-variant-numeric:tabular-nums;color:#d6f298}
+#fieldscreen-concept .fs-mlb-series-game{display:flex;align-items:center;justify-content:space-between;gap:calc(var(--ez-u)*14);padding:calc(var(--ez-u)*14) 0;border-bottom:1px solid #77a58a33;font:500 calc(var(--ez-u)*20) 'IBM Plex Mono'}
+#fieldscreen-concept .fs-mlb-series-game small{display:block;color:#bed1c3;font:400 calc(var(--ez-u)*21) Inter;margin-top:calc(var(--ez-u)*6)}
+#fieldscreen-concept .fs-mlb-team-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:calc(var(--ez-u)*22);align-content:start}
+#fieldscreen-concept .fs-mlb-team-grid>p{grid-column:1/-1}
+#fieldscreen-concept .fs-mlb-loader{width:calc(var(--ez-u)*105);height:calc(var(--ez-u)*105);position:relative;transform:rotate(45deg);margin:calc(var(--ez-u)*38);border:1px solid #a8d78755;background:radial-gradient(#486b3088,transparent)}
+#fieldscreen-concept .fs-mlb-loader span{position:absolute;width:calc(var(--ez-u)*17);height:calc(var(--ez-u)*17);background:#d8f3a7;border-radius:2px;box-shadow:0 0 25px #bade7866}
+.fs-mlb-loader span:nth-child(1){top:-8%;left:-8%}.fs-mlb-loader span:nth-child(2){top:-8%;right:-8%}.fs-mlb-loader span:nth-child(3){bottom:-8%;right:-8%}.fs-mlb-loader span:nth-child(4){bottom:-8%;left:-8%}
+.fs-mlb-loader.is-loading span{animation:fs-base-pulse 1.6s infinite}.fs-mlb-loader span:nth-child(2){animation-delay:.4s}.fs-mlb-loader span:nth-child(3){animation-delay:.8s}.fs-mlb-loader span:nth-child(4){animation-delay:1.2s}
+@keyframes fs-base-pulse{0%,100%{opacity:.3}30%{opacity:1;box-shadow:0 0 32px #d2ff7c}}
+@media(prefers-reduced-motion:reduce){.fs-mlb-loader.is-loading span{animation:none}}
+#fieldscreen-concept .fs-mlb-scorecard>div:has(.fs-diamond){overflow:hidden}
+#fieldscreen-concept .ez-tv-switch{flex-shrink:1}
+#fieldscreen-concept.fs-mlb-active .ez-tv-switch button{font-size:calc(var(--ez-u)*19);padding:calc(var(--ez-u)*10)}
+#fieldscreen-concept [data-mlb-page]{background:#264833;border:1px solid #759b7355;border-radius:4px;color:#c9efac;font:500 calc(var(--ez-u)*23) Inter;padding:calc(var(--ez-u)*4) calc(var(--ez-u)*13);cursor:pointer}
+#fieldscreen-concept .ez-button:disabled{opacity:.45;cursor:default}
+
+#fieldscreen-concept.ez-stadium .fs-nfl-controls>label,#fieldscreen-concept.ez-stadium .fs-nfl-controls>span{color:#416758}
+#fieldscreen-concept .ez-top .fs-iptv-button{color:#e5f6d5!important}
+#fieldscreen-concept.fs-mlb-active .ez-dir-mini{background:linear-gradient(150deg,#204b39,#102f29);border-color:#719c6677;color:#e6f2dc}
+#fieldscreen-concept.fs-mlb-active .ez-dir-mini-head,#fieldscreen-concept.fs-mlb-active .ez-dir-mini-foot{color:#d8ebd3}
+#fieldscreen-concept.fs-mlb-active .ez-dir-mini[aria-pressed=true]{border-color:#c4f092;box-shadow:inset 0 0 0 1px #c4f09288,0 0 18px #91d87422}
+
+#fieldscreen-concept.ez-tv.ez-tv-fit.fs-nfl-connected .ez-top #ez-intro{display:none}
+#fieldscreen-concept.ez-tv.ez-tv-fit.fs-nfl-connected .ez-top{gap:calc(var(--ez-u)*10);padding-left:calc(var(--ez-u)*25);padding-right:calc(var(--ez-u)*25)}
+#fieldscreen-concept.ez-tv.ez-tv-fit.fs-nfl-connected .ez-brand{font-size:calc(var(--ez-u)*32);min-width:calc(var(--ez-u)*260)}
+#fieldscreen-concept .ez-native-fullscreen,#fieldscreen-concept .ez-native-exit{font-size:calc(var(--ez-u)*19);padding:calc(var(--ez-u)*9)}

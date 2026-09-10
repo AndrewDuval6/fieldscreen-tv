@@ -38,6 +38,7 @@ function preserveRender(callback) {
   if (q('.fs-nfl-scroll')) q('.fs-nfl-scroll').scrollTop = scroll;
 }
 function header() {
+  q('.ez-brand-sub').textContent='SPORTS CONTROL ROOM'; q('.ez-dir-name>b').textContent='SUNDAY DIRECTOR'; q('#ez-dir-fields').setAttribute('aria-label','All game field positions');
   root.classList.add('fs-nfl-connected', 'ez-tv'); api.state.tv = true;
   const panel = state.panel === 'game' ? 'gameday' : state.panel;
   root.querySelectorAll('[data-tv-view],[data-nfl-view]').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.tvView || b.dataset.nflView) === panel)));
@@ -155,12 +156,13 @@ async function refresh() {
 }
 root.fieldscreenNfl = {
   enabled: true, render, afterRender: header, matchBroadcasts, liveBroadcast,
+  activate() { state.panel = 'gameday'; api.state.view = 'gameday'; },
   coverage: channels => gameCoverage(state.board?.games || [], channels),
-  sourceOptions(source) { return (root.fieldscreenIptv?.sourceOptions(source) || '') + `<optgroup label="NFL scorecards">${(state.board?.games || []).map(g => `<option value="game:${g.id}" ${source === 'game:' + g.id ? 'selected' : ''}>${esc(g.away.abbr)} @ ${esc(g.home.abbr)}</option>`).join('')}</optgroup><optgroup label="NFL data"><option value="dashboard" ${source === 'dashboard' ? 'selected' : ''}>League scoreboard</option><option value="standings" ${source === 'standings' ? 'selected' : ''}>Standings</option></optgroup>`; },
+  sourceOptions(source, includeIptv = true) { return (includeIptv ? root.fieldscreenIptv?.sourceOptions(source) || '' : '') + `<optgroup label="NFL scorecards">${(state.board?.games || []).map(g => `<option value="game:${g.id}" ${source === 'game:' + g.id ? 'selected' : ''}>${esc(g.away.abbr)} @ ${esc(g.home.abbr)}</option>`).join('')}</optgroup><optgroup label="NFL data"><option value="nfl:dashboard" ${['dashboard','nfl:dashboard'].includes(source) ? 'selected' : ''}>League scoreboard</option><option value="nfl:standings" ${['standings','nfl:standings'].includes(source) ? 'selected' : ''}>Standings</option></optgroup>`; },
   feed(slot, headerHTML) {
     const source = api.state.slots[slot]; if (String(source).startsWith('iptv:')) return undefined;
     const game = state.board?.games.find(g => 'game:' + g.id === source);
-    const body = game ? `<div class="fs-watch-scorecard">${scoreboard(game)}<span>${esc(game.state === 'pre' ? localTime(game.date) : game.detail)}</span><div>${pitch(game, 'watch-' + slot)}</div>${btn('Watch game ↗', `data-nfl-watch="${game.id}" data-watch-slot="${slot}"`)}</div>` : source === 'standings' ? `<div class="fs-watch-data"><h3>NFL STANDINGS</h3>${state.standings?.divisions.map(d => `<p>${esc(d.name)}</p>${d.entries.map(e => `<div><span>${esc(e.team.abbr)}</span><b>${esc(val(e.stats,'wins'))}–${esc(val(e.stats,'losses'))}–${esc(val(e.stats,'ties'))}</b></div>`).join('')}`).join('') || '<p>Loading standings…</p>'}</div>` : `<div class="fs-watch-data"><h3>LEAGUE SCOREBOARD</h3>${state.board?.games.map(g => `<button ${g.live ? 'data-nfl-watch' : 'data-nfl-detail'}="${g.id}"><span>${esc(g.away.abbr)} @ ${esc(g.home.abbr)}<small>${esc(g.state === 'pre' ? localTime(g.date) : g.detail)}</small></span><b>${esc(dash(g.away.score))} : ${esc(dash(g.home.score))}</b></button>`).join('') || '<p>Connecting to ESPN…</p>'}</div>`;
+    const body = game ? `<div class="fs-watch-scorecard">${scoreboard(game)}<span>${esc(game.state === 'pre' ? localTime(game.date) : game.detail)}</span><div>${pitch(game, 'watch-' + slot)}</div>${btn('Watch game ↗', `data-nfl-watch="${game.id}" data-watch-slot="${slot}"`)}</div>` : ['standings','nfl:standings'].includes(source) ? `<div class="fs-watch-data"><h3>NFL STANDINGS</h3>${state.standings?.divisions.map(d => `<p>${esc(d.name)}</p>${d.entries.map(e => `<div><span>${esc(e.team.abbr)}</span><b>${esc(val(e.stats,'wins'))}–${esc(val(e.stats,'losses'))}–${esc(val(e.stats,'ties'))}</b></div>`).join('')}`).join('') || '<p>Loading standings…</p>'}</div>` : `<div class="fs-watch-data"><h3>LEAGUE SCOREBOARD</h3>${state.board?.games.map(g => `<button ${g.live ? 'data-nfl-watch' : 'data-nfl-detail'}="${g.id}"><span>${esc(g.away.abbr)} @ ${esc(g.home.abbr)}<small>${esc(g.state === 'pre' ? localTime(g.date) : g.detail)}</small></span><b>${esc(dash(g.away.score))} : ${esc(dash(g.home.score))}</b></button>`).join('') || '<p>Connecting to ESPN…</p>'}</div>`;
     return `<article class="ez-feed fs-nfl-feed" data-slot="${slot}">${headerHTML}${body}<div class="ez-feed-foot"><span>${esc(fresh(state.board?.meta))}</span><span>DATA PANE</span></div></article>`;
   },
   statusText: () => state.board ? fresh(state.board.meta) : 'Connecting to ESPN…',
@@ -170,6 +172,10 @@ q('.ez-tv-switch>span').id = 'fs-nfl-source';
 q('.ez-tv-switch').insertBefore(Object.assign(document.createElement('span'), { className: 'fs-extra-tabs', innerHTML: [['schedule','Schedule'],['standings','Standings'],['teams','Teams']].map(([p,l]) => `<button data-nfl-view="${p}" aria-pressed="false">${l}</button>`).join('') }), q('.ez-tv-switch>span'));
 root.addEventListener('click', event => {
   const b = event.target.closest('button'); if (!b) return;
+  if (root.fieldscreenSports.active() !== 'nfl') {
+    if (b.dataset.nflWatch) { const game = state.board?.games.find(g => g.id === b.dataset.nflWatch); if (game) root.fieldscreenIptv.openGame(game, Number(b.dataset.watchSlot || 0)); event.stopImmediatePropagation(); return; }
+    if (b.dataset.nflDetail) root.fieldscreenSports.switchSport('nfl'); else return;
+  }
   const panel = b.dataset.nflView || b.dataset.tvView || b.dataset.view || (b.dataset.cmd !== 'tv' ? b.dataset.cmd : null);
   if (panel || b.dataset.nflGame || b.dataset.nflDetail || b.dataset.nflWatch || b.dataset.nflTeam || b.dataset.nflConference || b.dataset.detailTab || b.dataset.statsCategory || b.dataset.fieldPage || b.hasAttribute('data-nfl-refresh') || b.hasAttribute('data-nfl-current') || ['ez-dir-auto','ez-dir-pin','ez-dir-play','ez-dir-detail'].includes(b.id)) {
     event.preventDefault(); event.stopImmediatePropagation();
@@ -193,10 +199,12 @@ root.addEventListener('click', event => {
   }
 }, true);
 root.addEventListener('change', event => {
+  if (root.fieldscreenSports.active() !== 'nfl') return;
   const id = event.target.id;
   if (['fs-nfl-season','fs-nfl-week','fs-nfl-type'].includes(id)) { state.season = Number(q('#fs-nfl-season').value); state.week = Number(q('#fs-nfl-week').value); state.type = q('#fs-nfl-type').value; if (state.type !== '2' && state.week > 5) state.week = 1; state.loading = true; state.board = null; state.fieldPage = 0; api.render(); void refresh(); }
   if (id === 'fs-team-select' || id === 'fs-team-season') { state.team = q('#fs-team-select').value; state.statsSeason = Number(q('#fs-team-season').value); void loadTeam(); }
 });
+root.fieldscreenSports.register('nfl', root.fieldscreenNfl);
 api.render();
 request('teams').then(data => { state.teams = data.teams; bindTeams(); api.render(); if (state.panel === 'teams') void loadTeam(); }).catch(() => {});
 void loadStandings(); void refresh();

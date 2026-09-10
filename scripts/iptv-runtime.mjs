@@ -210,10 +210,10 @@ q('#fs-guide-form').addEventListener('submit', async event => {
   } catch (error) { if (revision === connectionRevision) message(error.message, true); }
   finally { guideBusy = false; q('#fs-save-guide').disabled = false; q('#fs-guide-refresh').disabled = false; if (view === 'library') renderLibrary(); }
 });
-function coverage() { return root.fieldscreenNfl?.coverage(connection.channels) || []; }
+function coverage() { return root.fieldscreenSports?.coverage(connection.channels) || []; }
 function renderGames() {
   const games = coverage();
-  const html = games.length ? games.map(({game, matches, ready}) => `<article class="fs-auto-game"><div><small>${game.live ? 'LIVE NOW' : escape(when(game.date))} · ${escape(game.network || 'NFL')}</small><strong>${escape(game.away.fullName)} <span>at</span> ${escape(game.home.fullName)}</strong><p>${ready ? 'Matchup confirmed in your TV guide' : matches.length ? `${matches.length} possible channel${matches.length === 1 ? '' : 's'} · ${escape(matches[0].confidence)}` : guideBusy ? 'Reading your guide…' : 'No matching coverage in the available guide'}</p></div><button class="ez-button ${ready ? 'ez-primary' : ''}" data-coverage-game="${escape(game.id)}">${ready ? 'Watch game ↗' : matches.length ? 'Check coverage' : 'Find coverage'}</button></article>`).join('') : '<div class="fs-no-channels"><strong>No upcoming NFL games loaded</strong><p>Games appear here as the schedule loads. Your channels remain available under All channels.</p></div>';
+  const html = games.length ? games.map(({game, matches, ready}) => `<article class="fs-auto-game"><div><small>${game.live ? 'LIVE NOW' : escape(when(game.date))} · ${escape(game.network || game.league?.toUpperCase() || 'Sports')}</small><strong>${escape(game.away.fullName)} <span>at</span> ${escape(game.home.fullName)}</strong><p>${ready ? 'Matchup confirmed in your TV guide' : matches.length ? `${matches.length} possible channel${matches.length === 1 ? '' : 's'} · ${escape(matches[0].confidence)}` : guideBusy ? 'Reading your guide…' : 'No matching coverage in the available guide'}</p></div><button class="ez-button ${ready ? 'ez-primary' : ''}" data-coverage-game="${escape((game.league || 'nfl') + ':' + game.id)}">${ready ? 'Watch game ↗' : matches.length ? 'Check coverage' : 'Find coverage'}</button></article>`).join('') : '<div class="fs-no-channels"><strong>No upcoming games loaded</strong><p>Games appear here as the schedule loads. Your channels remain available under All channels.</p></div>';
   if (q('#fs-auto-games').innerHTML !== html) q('#fs-auto-games').innerHTML = html;
 }
 function renderLibrary() {
@@ -230,7 +230,7 @@ function renderLibrary() {
   modal.querySelectorAll('[data-channel-filter]').forEach(b => { b.classList.toggle('on', b.dataset.channelFilter === filter); b.setAttribute('aria-pressed', String(b.dataset.channelFilter === filter)); });
   q('#fs-guide-match').hidden = !matchedGame;
   if (matchedGame) q('#fs-guide-match-title').textContent = `${matchedGame.away.fullName} at ${matchedGame.home.fullName} · ${when(matchedGame.date)}`;
-  const candidates = matchedGame ? root.fieldscreenNfl.matchBroadcasts(matchedGame, connection.channels) : connection.channels;
+  const candidates = matchedGame ? root.fieldscreenSports.matchBroadcasts(matchedGame, connection.channels) : connection.channels;
   const result = channelResults(candidates, { query: q('#fs-channel-search').value, group: q('#fs-channel-group').value, filter }, page);
   page = result.page; const current = result.channels;
   q('#fs-channel-count').textContent = `${result.total.toLocaleString()} matches across the full lineup${result.pages > 1 ? ` · page ${page + 1} of ${result.pages}` : ''}`;
@@ -257,7 +257,7 @@ async function watchGame(game, slot = 0) {
   target = Math.max(0, Math.min(3, slot)); previousFocus = document.activeElement;
   if (!game.live) { open(slot, '', game); message('This game is not live yet. Its available coverage appears here.'); return; }
   const revision = ++watchRevision, providerRevision = connectionRevision;
-  const matches = () => (root.fieldscreenNfl?.matchBroadcasts(game, connection.channels) || []).filter(c => c.matchScore === 100 && c.matchedProgram?.start <= Date.now() && c.matchedProgram?.end > Date.now());
+  const matches = () => (root.fieldscreenSports?.matchBroadcasts(game, connection.channels) || []).filter(c => c.matchScore === 100 && c.matchedProgram?.start <= Date.now() && c.matchedProgram?.end > Date.now());
   tuning.hidden = false;
   try {
     if (!matches().length) await refreshGuide();
@@ -303,7 +303,7 @@ modal.addEventListener('click', event => {
   const b = event.target.closest('button'); if (!b) return;
   if (b.dataset.libraryMode) { libraryMode = b.dataset.libraryMode; matchedGame = null; renderLibrary(); }
   if (b.dataset.coverageGame) {
-    const item = coverage().find(item => String(item.game.id) === b.dataset.coverageGame);
+    const item = coverage().find(item => (item.game.league || 'nfl') + ':' + item.game.id === b.dataset.coverageGame);
     if (item?.ready) selectChannel(item.ready, true);
     else if (item) { matchedGame = item.game; libraryMode = 'channels'; filter = 'all'; page = 0; q('#fs-channel-search').value = ''; q('#fs-channel-group').value = ''; renderLibrary(); }
   }
@@ -381,7 +381,7 @@ function sync() {
   players.forEach(player => { player.video.muted = player.slot !== api.state.audio; });
   root.querySelectorAll('[data-audio]').forEach(b => { const active = Number(b.dataset.audio) === api.state.audio; b.setAttribute('aria-pressed', String(active)); b.closest('.ez-feed')?.classList.toggle('has-audio', active); if (b.closest('.fs-iptv-feed')) b.textContent = active ? 'AUDIO FOCUS' : 'SELECT AUDIO'; });
   const note = q('.ez-watch-note p');
-  if (note) note.textContent = players.length ? `${players.length} channel${players.length > 1 ? 's' : ''} playing · one audio focus. ${connection.maxConnections ? `Your provider allows ${connection.maxConnections} simultaneous connections.` : 'Each playing pane uses one provider connection.'} ${root.fieldscreenNfl?.statusText() || 'Connecting NFL data…'}` : 'Choose Channels on any pane to watch your provider, or keep the NFL scoreboard alongside a game.';
+  if (note) note.textContent = players.length ? `${players.length} channel${players.length > 1 ? 's' : ''} playing · one audio focus. ${connection.maxConnections ? `Your provider allows ${connection.maxConnections} simultaneous connections.` : 'Each playing pane uses one provider connection.'} ${root.fieldscreenSports?.statusText() || 'Connecting sports data…'}` : 'Choose Channels on any pane to watch your provider, or keep the league scoreboard alongside a game.';
   requestAnimationFrame(place);
 }
 root.fieldscreenIptv = {

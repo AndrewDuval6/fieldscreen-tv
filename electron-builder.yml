@@ -35,6 +35,6 @@ linux:
   desktop:
     entry:
       Name: FieldScreen TV
-      Comment: NFL dashboard and IPTV multiview
+      Comment: NFL, MLB, and IPTV multiview
       StartupWMClass: fieldscreen-tv
 publish: null

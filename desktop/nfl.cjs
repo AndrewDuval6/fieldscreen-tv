@@ -19,7 +19,7 @@ function competition(raw, fallback = {}) {
   const live = state === 'in' && !/DELAY|SUSPEND|POSTPON|CANCEL/i.test(status.type?.name || '');
   const record = side => text(side.records?.find(r => r.type === 'total')?.summary || side.record?.find?.(r => r.type === 'total')?.displayValue || '');
   return {
-    id: identifier(raw.id || fallback.id), name: text(fallback.name || `${away.team.displayName} at ${home.team.displayName}`), date: text(raw.date || fallback.date),
+    league: 'nfl', id: identifier(raw.id || fallback.id), name: text(fallback.name || `${away.team.displayName} at ${home.team.displayName}`), date: text(raw.date || fallback.date),
     away: { ...team(away.team), score: state === 'pre' ? null : number(away.score?.value ?? away.score), record: record(away), quarters: list(away.linescores).map(s => number(s.value)), statistics: statistics(away.statistics) },
     home: { ...team(home.team), score: state === 'pre' ? null : number(home.score?.value ?? home.score), record: record(home), quarters: list(home.linescores).map(s => number(s.value)), statistics: statistics(home.statistics) },
     state: ['pre', 'in', 'post'].includes(state) ? state : 'unknown', live, complete: Boolean(status.type?.completed), status: text(status.type?.description || 'Status unavailable'), statusName: text(status.type?.name), detail: text(status.type?.shortDetail || status.type?.detail), period: number(status.period), clock: text(status.displayClock),
