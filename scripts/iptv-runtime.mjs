@@ -5,6 +5,7 @@ const q = selector => root.querySelector(selector);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 let connection = { channels: [] }, target = 0, mode = 'xtream', view = 'setup', filter = 'all', page = 0, players = [], previousFocus = null, guideBusy = false, matchedGame = null, channelsBusy = false, connectionRevision = 0, guideRevision = 0;
 let libraryMode = 'games';
+let guideRequest = null, watchRevision = 0;
 const time = date => new Date(date).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 const when = date => new Date(date).toLocaleDateString([], { weekday: 'short' }) + ' ' + time(date);
 const channelFor = slot => connection.channels.find(channel => 'iptv:' + channel.id === api.state.slots[slot]);
@@ -41,12 +42,18 @@ modal.innerHTML = `<div class="fs-iptv-panel"><header class="fs-iptv-heading"><d
 <details id="fs-guide-repair"><summary>Update TV guide</summary><form id="fs-guide-form"><label>Paste TV guide link<input type="password" id="fs-repair-url" required placeholder="Your provider’s EPG / XMLTV link" autocomplete="off"></label><button class="ez-button" id="fs-save-guide">Load guide</button></form><small>XMLTV and compressed XML.gz links work here. Your channels stay connected.</small></details></div>
 <div class="fs-provider-message" id="fs-provider-message" role="status" aria-live="polite" hidden></div></div>`;
 root.append(modal);
+const tuning = document.createElement('section'); tuning.className = 'fs-auto-tune'; tuning.hidden = true;
+tuning.innerHTML = '<div role="status"><img src="./fieldscreen-mark.png" alt=""><strong>Opening your game</strong><span>Finding the best available stream…</span><button class="ez-button">Cancel · B</button></div>';
+root.append(tuning);
+tuning.querySelector('button').addEventListener('click', () => { watchRevision++; tuning.hidden = true; });
+document.addEventListener('keydown', event => { if (!tuning.hidden && event.key === 'Escape') { watchRevision++; tuning.hidden = true; event.stopImmediatePropagation(); } }, true);
 const videoLayer = document.createElement('div'); videoLayer.className = 'fs-video-layer'; root.append(videoLayer);
 function message(text, error = false, loading = false) {
   const el = q('#fs-provider-message'); el.hidden = !text; el.classList.toggle('fs-error', error); el.classList.toggle('fs-loading', loading); el.textContent = text;
 }
 function setView(next) { view = next; q('#fs-provider-view').hidden = next !== 'setup'; q('#fs-library-view').hidden = next !== 'library'; q('#fs-iptv-title').textContent = next === 'setup' ? 'Connect your provider' : 'Find your game'; }
 function open(slot = 0, query = '', game = null) {
+  watchRevision++;
   matchedGame = game; q('#fs-channel-search').value = query; q('#fs-channel-group').value = ''; filter = 'all'; page = 0;
   libraryMode = game || query ? 'channels' : 'games';
   previousFocus = document.activeElement; target = Math.max(0, Math.min(3, slot));
@@ -121,7 +128,8 @@ async function connect(config, route = 'connect') {
   try {
     updateConnection(await request(route, config)); q('#fs-provider-form').reset();
     setView('library'); libraryMode = 'games'; filter = 'all'; page = 0; renderLibrary(); message(connection.storageNote || '');
-    q(`[data-iptv-target="${target}"]`).focus(); void refreshGuide();
+    close(); q('#ez-enter').click(); q('[data-tv-view="gameday"]').click();
+    void refreshGuide();
   } catch (error) { message(error.message, true); }
   finally { q('#fs-connect').disabled = false; q('#fs-demo').disabled = false; q('#fs-resume').disabled = false; }
 }
@@ -169,13 +177,15 @@ q('#fs-refresh-file').addEventListener('change', async () => {
 });
 async function refreshGuide(force = false) {
   const revision = connectionRevision;
-  if (!connection.connected || (guideBusy && guideRevision === revision)) return;
+  if (!connection.connected) return;
+  if (guideBusy && guideRevision === revision) return guideRequest?.catch(() => {});
   guideRevision = revision;
   guideBusy = true; q('#fs-guide-refresh').disabled = true;
   q('#fs-guide-note').textContent = connection.hasGuide ? 'Reading your provider’s TV guide…' : 'Channel names available · no TV guide supplied';
   const ids = connection.channels.map(c => c.id).join(',');
   try {
-    const result = await request('guide', { force });
+    guideRequest = request('guide', { force });
+    const result = await guideRequest;
     if (revision !== connectionRevision || ids !== connection.channels.map(c => c.id).join(',')) return;
     Object.assign(connection, result);
     q('#fs-guide-note').textContent = result.guideNote || 'Provider listings · times shown locally · NFL scores from ESPN';
@@ -240,6 +250,28 @@ function selectChannel(channel, watch = false) {
   showWall(); renderLibrary();
   if (watch) close();
   else { message(`Screen 0${target + 1}: ${channel.name}. Choose another screen, or open the watch wall.`); q(`[data-iptv-target="${Math.min(3, target + 1)}"]`).focus(); }
+}
+async function watchGame(game, slot = 0) {
+  if (!connection.connected) { open(slot, '', game); return; }
+  target = Math.max(0, Math.min(3, slot)); previousFocus = document.activeElement;
+  if (!game.live) { open(slot, '', game); message('This game is not live yet. Its available coverage appears here.'); return; }
+  const revision = ++watchRevision, providerRevision = connectionRevision;
+  const matches = () => (root.fieldscreenNfl?.matchBroadcasts(game, connection.channels) || []).filter(c => c.matchScore === 100 && c.matchedProgram?.start <= Date.now() && c.matchedProgram?.end > Date.now());
+  tuning.hidden = false;
+  try {
+    if (!matches().length) await refreshGuide();
+    if (revision !== watchRevision || providerRevision !== connectionRevision) return;
+    const candidates = matches(); let channel = candidates[0];
+    if (candidates.length > 1) {
+      try {
+        const result = await request('choose-broadcast', { channelIds: candidates.map(c => c.id), playing: players.length });
+        channel = candidates.find(c => c.id === result.channelId) || channel;
+      } catch { /* Let normal playback try the strongest guide match. */ }
+    }
+    if (revision !== watchRevision || providerRevision !== connectionRevision) return;
+    if (channel) { q('#ez-enter').click(); selectChannel(channel, true); }
+    else { tuning.hidden = true; open(slot, '', game); message(connection.guideStatus === 'error' ? connection.guideNote : 'Your guide does not confirm a live channel for this matchup. The closest available listings are shown below.'); }
+  } finally { if (revision === watchRevision) tuning.hidden = true; }
 }
 q('#fs-watch-wall').addEventListener('click', () => { close(); showWall(); });
 modal.addEventListener('click', event => {
@@ -327,7 +359,8 @@ function sync() {
   requestAnimationFrame(place);
 }
 root.fieldscreenIptv = {
-  openGame: (game, slot = 0) => open(slot, '', game),
+  openGame: watchGame,
+  connected: () => Boolean(connection.connected),
   open, close,
   sourceOptions(source) { const channel = connection.channels.find(c => 'iptv:' + c.id === source); return channel ? `<optgroup label="Your channel"><option value="iptv:${channel.id}" selected>${escape(channel.name)}</option></optgroup>` : ''; },
   feed(slot, header, audio) {

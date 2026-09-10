@@ -40,8 +40,13 @@ export function matchBroadcasts(game, channels, now = Date.now()) {
     const epg = normalize(String(channel.epgId || '').split('.')[0]);
     if (!game.complete && !conflicting && score < 25 && network.some(n => n === channelName || n === epg)) { score = 25; confidence = 'Scheduled network · guide confirmation unavailable'; }
     if (!game.complete && !conflicting && score < 20 && (a || h) && /\bnfl\b|american football/i.test(channel.group || '')) { score = 20; confidence = 'Team channel · verify listing'; }
-    return { ...channel, matchScore: score, matchedProgram, confidence };
-  }).filter(c => c.matchScore > 0).sort((a, b) => b.matchScore - a.matchScore || a.name.localeCompare(b.name));
+    return { ...channel, matchScore: score, matchedProgram, confidence, networkMatch: network.some(n => n === channelName || n === epg) };
+  }).filter(c => c.matchScore > 0).sort((a, b) => b.matchScore - a.matchScore || Number(b.networkMatch) - Number(a.networkMatch) || a.name.localeCompare(b.name));
+}
+
+export function liveBroadcast(game, channels, now = Date.now()) {
+  if (!game.live || game.complete) return null;
+  return matchBroadcasts(game, channels, now).find(channel => channel.matchScore === 100 && channel.matchedProgram?.start <= now && channel.matchedProgram?.end > now) || null;
 }
 
 export function gameCoverage(games, channels, now = Date.now()) {

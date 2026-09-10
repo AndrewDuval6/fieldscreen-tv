@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import { gzipSync } from 'node:zlib';
 import http from 'node:http';
 import { channelResults } from '../scripts/iptv-core.mjs';
-import { gameCoverage, matchBroadcasts } from '../scripts/nfl-core.mjs';
+import { gameCoverage, matchBroadcasts, liveBroadcast } from '../scripts/nfl-core.mjs';
 const require = createRequire(import.meta.url);
 const { guideResponse } = require('../desktop/guide.cjs');
 const { startLocalServer } = require('../desktop/iptv.cjs');
@@ -40,10 +40,17 @@ test('Games have a watch action only for a current, confirmed guide match; netwo
   const channels=[{id:'nbc',name:'NBC HD',epgId:'NBC.us',programs:[]},{id:'wrong',name:'NBC Sports',epgId:'NBCSports.us',programs:[]}];
   assert.deepEqual(matchBroadcasts(game,channels,now).map(c=>c.id),['nbc']);
   assert.equal(gameCoverage([game],channels,now)[0].ready,undefined);
+  assert.equal(liveBroadcast(game,channels,now),null);
   channels[0].programs=[{title:'Patriots at Seahawks',start:now-3600000,end:now+3600000}];
   assert.equal(gameCoverage([game],channels,now)[0].ready.id,'nbc');
+  assert.equal(liveBroadcast(game,channels,now).id,'nbc');
+  assert.equal(liveBroadcast(game,[{...channels[0],id:'alternate',name:'Alternate Sports',epgId:'other'},...channels],now).id,'nbc','prefer the scheduled network among confirmed game listings');
+  assert.equal(liveBroadcast({...game,live:false},channels,now),null);
+  assert.equal(liveBroadcast({...game,complete:true},channels,now),null);
+  assert.equal(liveBroadcast(game,channels,now+7200000),null);
   channels[0].programs[0].title='Patriots at Seahawks replay';
   assert.equal(gameCoverage([game],channels,now)[0].ready,undefined);
+  assert.equal(liveBroadcast(game,channels,now),null);
   assert.equal(gameCoverage([{...game,complete:true}],channels,now).length,0);
 });
 

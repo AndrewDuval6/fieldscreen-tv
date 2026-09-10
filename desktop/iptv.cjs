@@ -6,6 +6,7 @@ const { readFile } = require('node:fs/promises');
 const path = require('node:path');
 const { guideResponse } = require('./guide.cjs');
 const { createNFL } = require('./nfl.cjs');
+const { chooseBroadcast } = require('./broadcast.cjs');
 
 const PREFIX = '/preview/iptv/';
 const LIMIT = 12 * 1024 * 1024;
@@ -120,7 +121,9 @@ function createIPTV({ vault } = {}) {
   const nfl = createNFL();
   let channels = [], metadata = null, activeConfig = null, connecting = false, generation = 0, channelRevision = 0, guideURL = null, guideLoaded = 0, guideJob = null, guideController = null, guideState = {};
   const resources = new Map(), reverse = new Map(), pending = new Set();
+  const broadcastCache = new Map(); let broadcastJob = false;
   function clear() {
+    broadcastCache.clear();
     generation++;
     for (const controller of pending) controller.abort();
     pending.clear(); channels = []; metadata = null; activeConfig = null; resources.clear(); reverse.clear(); guideURL = null; guideLoaded = 0; guideJob = null; guideController = null; guideState = {};
@@ -327,6 +330,18 @@ function createIPTV({ vault } = {}) {
       try { config = JSON.parse(Buffer.concat(chunks).toString() || '{}'); } catch { return json(res, 400, { error: 'Invalid request.' }); }
       if (!config || typeof config !== 'object' || Array.isArray(config)) return json(res, 400, { error: 'Invalid request.' });
       if (route === PREFIX + 'connect') return json(res, 200, await connect(config));
+      if (route === PREFIX + 'choose-broadcast') {
+        if (broadcastJob) throw new PublicError('A game stream is already being checked.');
+        const ids = Array.isArray(config.channelIds) ? new Set(config.channelIds.slice(0, 8)) : new Set();
+        const candidates = [...ids].map(id => channels.find(c => c.id === id)).filter(Boolean).map(c => ({ id: c.id, url: resources.get(c.stream.slice((PREFIX + 'stream/').length))?.url })).filter(c => c.url);
+        if (!candidates.length) throw new PublicError('No matching channels are connected.');
+        const controller = new AbortController(); pending.add(controller); broadcastJob = true;
+        const abort = () => controller.abort(); res.on('close', abort);
+        try {
+          const canProbe = !metadata.maxConnections || metadata.maxConnections > Math.max(0, Number(config.playing) || 0);
+          return json(res, 200, await chooseBroadcast(candidates, { upstream, cache: broadcastCache, signal: controller.signal, canProbe }));
+        } finally { controller.abort(); pending.delete(controller); broadcastJob = false; res.off('close', abort); }
+      }
       if (route === PREFIX + 'check-storage') return json(res, 200, await status(true));
       if (route === PREFIX + 'remember') {
         if (!activeConfig || metadata?.demo) throw new PublicError('Connect your provider before saving it.');
