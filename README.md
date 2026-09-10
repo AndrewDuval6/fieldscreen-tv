@@ -70,8 +70,11 @@ The installed AppImage has a stable path at `~/Applications/FieldScreen-TV.AppIm
 1. Choose **Connect IPTV** in the top bar.
 2. Enter an **Xtream** provider address, username, and password, or choose **M3U playlist** and paste its URL/import a file.
 3. Add your **XMLTV guide URL** if needed. Xtream guides and guide URLs embedded in M3U headers are detected automatically.
-4. Search for a team, matchup, or channel. Filter by group, **Football**, **RedZone**, or **On now**.
-5. Choose a destination screen, then **Watch** on a channel. Assign additional screens, then open **Watch wall**.
+4. Select **Remember this provider** if desired, then **Connect provider**. The app returns to the dashboard and loads the guide in the background.
+5. Click a live game tile or **Watch game**. FieldScreen matches the guide and starts the broadcast, briefly checking available feeds when more than one matches.
+6. Use **RedZone** beside the screen-layout buttons to open an available RedZone feed in the main pane without changing your layout.
+
+The channel picker is a fallback when the guide cannot confirm coverage. You can also open **TV guide · IPTV** or **Channels** for manual selection: search the whole lineup, choose a destination screen, and select a channel. RedZone availability depends on the provider's current lineup and guide.
 
 **Refresh channels** reloads your M3U URL or Xtream lineup using the current connection, including session-only connections. It updates channel names and groups, adds new channels, removes missing ones, and shows the last successful update time. Channels whose stream URLs stay the same keep playing; removed or changed streams return their panes to the dashboard. A failed refresh keeps the previous lineup. For an imported M3U file, the button asks you to select an updated file; a local file cannot retrieve provider changes by itself. Remembered file imports update their encrypted saved copy.
 
