@@ -3,7 +3,7 @@ import { currentProgram, nextProgram, filterChannels, reconcilePlayers } from '.
 const root = document.getElementById('fieldscreen-concept'), api = root.fieldscreenConcept;
 const q = selector => root.querySelector(selector);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-let connection = { channels: [] }, target = 0, mode = 'xtream', view = 'setup', filter = 'all', page = 0, players = [], previousFocus = null, guideBusy = false, matchedGame = null;
+let connection = { channels: [] }, target = 0, mode = 'xtream', view = 'setup', filter = 'all', page = 0, players = [], previousFocus = null, guideBusy = false, matchedGame = null, channelsBusy = false, connectionRevision = 0, guideRevision = 0;
 const PAGE_SIZE = 48;
 const time = date => new Date(date).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 const when = date => new Date(date).toLocaleDateString([], { weekday: 'short' }) + ' ' + time(date);
@@ -24,7 +24,7 @@ modal.innerHTML = `<div class="fs-iptv-panel"><header class="fs-iptv-heading"><d
 <div class="fs-provider-tabs"><button class="ez-button on" data-provider-type="xtream" aria-pressed="true">Xtream login</button><button class="ez-button" data-provider-type="m3u" aria-pressed="false">M3U playlist</button><button class="ez-button" id="fs-resume" hidden>Use saved provider</button></div>
 <form id="fs-provider-form" autocomplete="off"><div class="fs-form-grid"><label class="fs-wide">Provider address<input id="fs-provider-url" type="password" placeholder="https://your-provider.example:8080" autocomplete="off" required></label><label data-xtream>Username<input id="fs-provider-user" autocomplete="off" spellcheck="false"></label><label data-xtream>Password<input id="fs-provider-password" type="password" autocomplete="new-password"></label><label data-m3u hidden class="fs-wide">Or choose a playlist file<input id="fs-provider-file" type="file" accept=".m3u,.m3u8,text/plain,audio/x-mpegurl"></label><label class="fs-wide">TV guide URL <span>Optional · found automatically when supplied</span><input id="fs-guide-url" type="password" placeholder="https://your-provider.example/guide.xml" autocomplete="off"></label></div>
 <label class="fs-remember"><input id="fs-remember" type="checkbox">Remember this provider on this device</label><p id="fs-storage-note" class="fs-muted">Credentials stay on this device for this session.</p><div class="fs-form-actions"><button class="ez-button ez-primary" type="submit" id="fs-connect">Connect provider</button><button class="ez-button" type="button" id="fs-demo">Try sample video</button><button class="ez-button" type="button" id="fs-back-library" hidden>Back to channels</button></div></form></div>
-<div id="fs-library-view" hidden><div class="fs-library-meta"><span id="fs-provider-label"></span><div><button class="ez-button" id="fs-guide-refresh">Refresh guide</button><button class="ez-button" id="fs-provider-edit">Provider settings</button><button class="ez-button" id="fs-disconnect">Disconnect & forget</button></div></div>
+<div id="fs-library-view" hidden><div class="fs-library-meta"><div class="fs-provider-status"><span id="fs-provider-label"></span><small id="fs-channels-updated"></small></div><div class="fs-library-actions"><button class="ez-button" id="fs-channels-refresh">Refresh channels</button><button class="ez-button" id="fs-guide-refresh">Refresh guide</button><button class="ez-button" id="fs-provider-edit">Provider settings</button><button class="ez-button" id="fs-disconnect">Disconnect & forget</button></div></div><input id="fs-refresh-file" type="file" accept=".m3u,.m3u8,text/plain,audio/x-mpegurl" aria-label="Updated M3U playlist" hidden>
 <div class="fs-targets" aria-label="Choose a destination screen">${[0,1,2,3].map(i => `<button class="fs-target" data-iptv-target="${i}" aria-pressed="${i === 0}"><small>SCREEN 0${i + 1}</small><strong id="fs-target-${i}">Choose a channel</strong></button>`).join('')}</div>
 <div id="fs-guide-match" class="fs-guide-match" hidden><div><strong id="fs-guide-match-title"></strong><span>Suggested listings from team names and kickoff time. Check the guide before watching.</span></div><button class="ez-button" id="fs-guide-show-all">Browse all channels</button></div>
 <div class="fs-library-search"><input type="search" id="fs-channel-search" placeholder="Search teams, games, channels…" aria-label="Search teams, games, channels"><select id="fs-channel-group" aria-label="Channel group"><option value="">All groups</option></select></div>
@@ -68,12 +68,16 @@ function type(next) {
 modal.querySelectorAll('[data-provider-type]').forEach(b => b.addEventListener('click', () => type(b.dataset.providerType)));
 q('#fs-provider-file').addEventListener('change', () => { q('#fs-provider-url').required = !q('#fs-provider-file').files.length; });
 function updateConnection(value) {
+  connectionRevision++;
+  const selectedGroup = q('#fs-channel-group').value;
   connection = value; openButton.textContent = value.connected ? 'TV guide · IPTV' : 'Connect IPTV';
   q('#fs-resume').hidden = !value.saved; q('#fs-back-library').hidden = !value.connected;
   q('#fs-remember').disabled = !value.canRemember;
   q('#fs-storage-note').textContent = value.canRemember ? 'Remembering uses your system keyring. Disconnect & forget removes the saved provider.' : 'Session only. The Linux app can remember logins when a system keyring is available.';
   const groups = [...new Set(value.channels.map(c => c.group))].sort();
   q('#fs-channel-group').innerHTML = '<option value="">All groups</option>' + groups.map(g => `<option>${escape(g)}</option>`).join('');
+  if (groups.includes(selectedGroup)) q('#fs-channel-group').value = selectedGroup;
+  q('#fs-channels-refresh').disabled = channelsBusy || !value.connected || value.demo;
   api.state.slots = api.state.slots.map((slot, i) => typeof slot === 'string' && slot.startsWith('iptv:') && !channelFor(i) ? 'dashboard' : slot);
   api.render(); sync();
 }
@@ -99,26 +103,57 @@ q('#fs-resume').addEventListener('click', () => connect({}, 'resume'));
 q('#fs-provider-edit').addEventListener('click', () => { message(''); setView('setup'); q('#fs-provider-url').focus(); });
 q('#fs-back-library').addEventListener('click', () => { message(''); setView('library'); renderLibrary(); });
 q('#fs-disconnect').addEventListener('click', async () => {
+  connectionRevision++;
   try { updateConnection(await request('disconnect', {})); setView('setup'); message('Disconnected. Saved provider details removed.'); }
   catch (error) { message(error.message, true); }
 });
+async function refreshChannels(playlist) {
+  if (!connection.connected || channelsBusy) return;
+  const revision = connectionRevision;
+  channelsBusy = true;
+  const button = q('#fs-channels-refresh'); button.disabled = true; button.textContent = 'Refreshing…'; button.setAttribute('aria-busy', 'true');
+  message('Refreshing your channel lineup…', false, true);
+  try {
+    const updated = await request('refresh-channels', playlist === undefined ? {} : { playlist });
+    if (revision !== connectionRevision) return;
+    updateConnection(updated); renderLibrary();
+    message(`Channels refreshed · ${connection.channels.length.toLocaleString()} available. ${updated.storageNote || ''}`.trim());
+    void refreshGuide(true);
+  } catch (error) { if (revision === connectionRevision) message(`Channels could not be refreshed. Your previous lineup is still available. ${error.message}`, true); }
+  finally { channelsBusy = false; button.disabled = !connection.connected || connection.demo; button.textContent = 'Refresh channels'; button.removeAttribute('aria-busy'); }
+}
+q('#fs-channels-refresh').addEventListener('click', () => {
+  if (connection.playlistFile) { message('Choose the updated M3U file from your provider.'); q('#fs-refresh-file').value = ''; q('#fs-refresh-file').click(); }
+  else void refreshChannels();
+});
+q('#fs-refresh-file').addEventListener('change', async () => {
+  const file = q('#fs-refresh-file').files[0], revision = connectionRevision;
+  if (!file) return;
+  if (file.size > 12 * 1024 * 1024) { message('Choose a playlist smaller than 12 MB.', true); return; }
+  try { const playlist = await file.text(); if (revision === connectionRevision) await refreshChannels(playlist); }
+  catch { if (revision === connectionRevision) message('The playlist file could not be read. Choose it again.', true); }
+});
 async function refreshGuide(force = false) {
-  if (!connection.connected || guideBusy) return;
+  const revision = connectionRevision;
+  if (!connection.connected || (guideBusy && guideRevision === revision)) return;
+  guideRevision = revision;
   guideBusy = true; q('#fs-guide-refresh').disabled = true;
   q('#fs-guide-note').textContent = connection.hasGuide ? 'Reading your provider’s TV guide…' : 'Channel names available · no TV guide supplied';
   const ids = connection.channels.map(c => c.id).join(',');
   try {
     const result = await request('guide', { force });
-    if (ids !== connection.channels.map(c => c.id).join(',')) return;
+    if (revision !== connectionRevision || ids !== connection.channels.map(c => c.id).join(',')) return;
     connection.channels = result.channels;
     q('#fs-guide-note').textContent = result.guideNote || 'Provider listings · times shown locally · NFL scores from ESPN';
     if (view === 'library') renderLibrary(); api.render();
-  } catch (error) { q('#fs-guide-note').textContent = error.message; }
-  finally { guideBusy = false; q('#fs-guide-refresh').disabled = false; }
+  } catch (error) { if (revision === connectionRevision) q('#fs-guide-note').textContent = error.message; }
+  finally { if (guideRevision === revision) { guideBusy = false; q('#fs-guide-refresh').disabled = false; } }
 }
 q('#fs-guide-refresh').addEventListener('click', () => refreshGuide(true));
 function renderLibrary() {
   q('#fs-provider-label').textContent = `${connection.provider || ''} · ${connection.channels.length.toLocaleString()} channels${connection.maxConnections ? ` · ${connection.maxConnections} provider connections allowed` : ''}`;
+  q('#fs-channels-updated').textContent = connection.channelsUpdated ? `Channels updated ${time(connection.channelsUpdated)}` : '';
+  q('#fs-channels-updated').title = connection.channelsUpdated ? new Date(connection.channelsUpdated).toLocaleString() : '';
   modal.querySelectorAll('[data-iptv-target]').forEach(b => { const i = Number(b.dataset.iptvTarget); b.setAttribute('aria-pressed', String(i === target)); q('#fs-target-' + i).textContent = channelFor(i)?.name || (api.state.slots[i] === 'dashboard' ? 'League dashboard' : 'Choose a channel'); });
   modal.querySelectorAll('[data-channel-filter]').forEach(b => { b.classList.toggle('on', b.dataset.channelFilter === filter); b.setAttribute('aria-pressed', String(b.dataset.channelFilter === filter)); });
   q('#fs-guide-match').hidden = !matchedGame;

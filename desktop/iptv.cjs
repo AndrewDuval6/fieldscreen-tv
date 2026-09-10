@@ -114,12 +114,12 @@ async function upstream(value, { signal, range, timeout = 25000 } = {}) {
 
 function createIPTV({ vault } = {}) {
   const nfl = createNFL();
-  let channels = [], metadata = null, connecting = false, generation = 0, guideURL = null, guideLoaded = 0, guideJob = null;
+  let channels = [], metadata = null, activeConfig = null, connecting = false, generation = 0, channelRevision = 0, guideURL = null, guideLoaded = 0, guideJob = null, guideController = null;
   const resources = new Map(), reverse = new Map(), pending = new Set();
   function clear() {
     generation++;
     for (const controller of pending) controller.abort();
-    pending.clear(); channels = []; metadata = null; resources.clear(); reverse.clear(); guideURL = null; guideLoaded = 0; guideJob = null;
+    pending.clear(); channels = []; metadata = null; activeConfig = null; resources.clear(); reverse.clear(); guideURL = null; guideLoaded = 0; guideJob = null; guideController = null;
   }
   function register(url, pinned = false) {
     let id = reverse.get(url);
@@ -135,7 +135,7 @@ function createIPTV({ vault } = {}) {
     return PREFIX + 'stream/' + id;
   }
   async function status() { return { connected: Boolean(metadata), ...metadata, channels, canRemember: Boolean(vault?.available()), saved: Boolean(await vault?.exists()) }; }
-  async function connect(config) {
+  async function connect(config, refreshing = false) {
     if (connecting) throw new PublicError('A provider connection is already in progress.');
     connecting = true;
     const epoch = generation, controller = new AbortController(); pending.add(controller);
@@ -185,32 +185,60 @@ function createIPTV({ vault } = {}) {
         meta = { provider: 'Mux public test stream', type: 'demo', demo: true };
       } else throw new PublicError('Choose Xtream login or an M3U playlist.');
       if (epoch !== generation) throw new PublicError('Connection cancelled.');
-      // Build first, so a failed new login never destroys the current connection.
-      pending.delete(controller); clear();
-      channels = entries.map(entry => ({ id: token(), name: entry.name, group: entry.group, epgId: entry.epgId || '', programs: [], stream: register(entry.url, true), format: /\.(mp4|webm)(?:\?|$)/i.test(entry.url) ? 'file' : /\.m3u8(?:\?|$)|[?&](?:output|format)=m3u8/i.test(entry.url) ? 'hls' : /\.ts(?:\?|$)/i.test(entry.url) ? 'mpegts' : 'auto' }));
-      guideURL = guide; metadata = { ...meta, hasGuide: Boolean(guide) };
+      // Fetch and validate before changing the lineup. Refresh retains capabilities
+      // for unchanged URLs so active players and in-flight media requests survive.
+      const previous = refreshing ? new Map(channels.map(channel => [resources.get(channel.stream.slice((PREFIX + 'stream/').length))?.url, channel])) : new Map();
+      const sameGuide = guideURL === guide;
+      pending.delete(controller);
+      if (!refreshing) clear();
+      else { guideController?.abort(); guideController = null; guideJob = null; guideLoaded = 0; }
+      channelRevision++;
+      const currentURLs = new Set(entries.map(entry => entry.url));
+      for (const [id, resource] of resources) {
+        if (resource.pinned && !currentURLs.has(resource.url)) { resources.delete(id); reverse.delete(resource.url); }
+      }
+      channels = entries.map(entry => {
+        const old = previous.get(entry.url);
+        return { id: old?.id || token(), name: entry.name, group: entry.group, epgId: entry.epgId || '', programs: sameGuide && old?.epgId === (entry.epgId || '') ? old.programs : [], stream: register(entry.url, true), format: /\.(mp4|webm)(?:\?|$)/i.test(entry.url) ? 'file' : /\.m3u8(?:\?|$)|[?&](?:output|format)=m3u8/i.test(entry.url) ? 'hls' : /\.ts(?:\?|$)/i.test(entry.url) ? 'mpegts' : 'auto' };
+      });
+      guideURL = guide; metadata = { ...meta, hasGuide: Boolean(guide), playlistFile: Boolean(config.playlist), channelsUpdated: Date.now() };
+      activeConfig = { ...config };
       let storageNote = '';
       try {
-        if (config.remember && vault?.available() && config.type !== 'demo') await vault.save(config);
-        else { await vault?.remove(); if (config.remember) storageNote = 'Connected for this session. A system keyring is required to remember a provider.'; }
+        // A URL refresh leaves the user's storage choice untouched. A replacement
+        // file updates the encrypted copy only when it was already remembered.
+        if (!refreshing || config.playlist) {
+          if (config.remember && vault?.available() && config.type !== 'demo') await vault.save(config);
+          else if (!refreshing) { await vault?.remove(); if (config.remember) storageNote = 'Connected for this session. A system keyring is required to remember a provider.'; }
+        }
       } catch { storageNote = 'Connected for this session, but the provider could not be saved.'; }
       return { ...await status(), storageNote };
     } finally { pending.delete(controller); connecting = false; }
+  }
+  async function refreshChannels(input) {
+    if (!activeConfig || !metadata) throw new PublicError('Connect a provider before refreshing channels.');
+    if (activeConfig.type === 'demo') throw new PublicError('Connect your provider to refresh its channels.');
+    let config = activeConfig;
+    if (activeConfig.playlist) {
+      if (typeof input.playlist !== 'string' || !input.playlist.trim()) throw new PublicError('Choose an updated M3U file to refresh an imported playlist.');
+      config = { ...activeConfig, playlist: input.playlist };
+    }
+    return connect(config, true);
   }
   async function loadGuide(force) {
     if (!guideURL || !metadata) return { channels, guideNote: 'No TV guide was supplied. Search channel names, or add an XMLTV guide URL in provider setup.' };
     if (!force && guideLoaded > Date.now() - 15 * 60000) return { channels, guideUpdated: guideLoaded };
     if (guideJob) return guideJob;
-    const epoch = generation, controller = new AbortController(); pending.add(controller);
+    const epoch = generation, revision = channelRevision, controller = new AbortController(); pending.add(controller); guideController = controller;
     const job = (async () => {
       try {
         const { response, url } = await upstream(guideURL, { signal: controller.signal, timeout: 90000 });
         const guide = await guideResponse(response, url, new Set(channels.map(c => c.epgId).filter(Boolean)));
-        if (epoch !== generation) throw new PublicError('The provider connection changed.');
+        if (epoch !== generation || revision !== channelRevision) throw new PublicError('The provider connection changed.');
         channels = channels.map(channel => ({ ...channel, programs: guide.get(channel.epgId) || [] })); guideLoaded = Date.now();
         return { channels, guideUpdated: guideLoaded, guideNote: guide.size ? '' : 'The guide has no matching current listings. Channels are still available.' };
       } catch { return { channels, guideNote: 'The TV guide is unavailable or unsupported. You can still search and play channels.' }; }
-      finally { controller.abort(); pending.delete(controller); if (guideJob === job) guideJob = null; }
+      finally { controller.abort(); pending.delete(controller); if (guideJob === job) guideJob = null; if (guideController === controller) guideController = null; }
     })();
     guideJob = job; return job;
   }
@@ -268,6 +296,7 @@ function createIPTV({ vault } = {}) {
       try { config = JSON.parse(Buffer.concat(chunks).toString() || '{}'); } catch { return json(res, 400, { error: 'Invalid request.' }); }
       if (!config || typeof config !== 'object' || Array.isArray(config)) return json(res, 400, { error: 'Invalid request.' });
       if (route === PREFIX + 'connect') return json(res, 200, await connect(config));
+      if (route === PREFIX + 'refresh-channels') return json(res, 200, await refreshChannels(config));
       if (route === PREFIX + 'guide') return json(res, 200, await loadGuide(Boolean(config.force)));
       if (route === PREFIX + 'resume') {
         const saved = await vault?.load();
