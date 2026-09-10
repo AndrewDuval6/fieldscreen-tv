@@ -77,6 +77,7 @@ function advancedStats(csv) {
 
 function createNFL({ fetcher = fetch, now = Date.now } = {}) {
   const cache = new Map(), requests = new Set();
+  // Expire live data before the 30-second UI poll to allow for request latency.
   async function load(key, url, normalize, ttl, source = 'ESPN') {
     let entry = cache.get(key);
     const response = () => ({ ...entry.data, meta: { source, updatedAt: entry.updatedAt, stale: Boolean(entry.error), warning: entry.error || '' } });
@@ -115,12 +116,12 @@ function createNFL({ fetcher = fetch, now = Date.now } = {}) {
         const query = new URLSearchParams({ limit: '1000' });
         if (season) query.set('dates', season);
         if (week) { if (!season) return json(res, 400, { error: 'Select a season with the week.' }); query.set('week', week); query.set('seasontype', type); }
-        result = await load(`scoreboard:${query}`, BASE + 'scoreboard?' + query, normalizeScoreboard, 30000);
+        result = await load(`scoreboard:${query}`, BASE + 'scoreboard?' + query, normalizeScoreboard, 25000);
       } else if (route === 'teams') {
         result = await load('teams', BASE + 'teams?limit=100', raw => { const teams = list(raw.sports?.[0]?.leagues?.[0]?.teams).map(t => team(t.team)); if (!teams.length) throw Error('Missing teams'); return { teams }; }, 86400000);
       } else if (route === 'standings') {
         result = await load('standings:' + (season || 'current'), 'https://site.api.espn.com/apis/v2/sports/football/nfl/standings?level=3' + (season ? '&season=' + season : ''), normalizeStandings, 10 * 60000);
-      } else if (route === 'game' && id) result = await load('game:' + id, BASE + 'summary?event=' + id, normalizeGame, 30000);
+      } else if (route === 'game' && id) result = await load('game:' + id, BASE + 'summary?event=' + id, normalizeGame, 25000);
       else if (route === 'team' && id && season) {
         result = await load(`team:${id}:${season}`, BASE + `teams/${id}/statistics?season=${season}`, raw => ({ team: team(raw.team), season: number(raw.requestedSeason?.year ?? raw.season?.year) || +season, categories: list(raw.results?.stats?.categories).map(c => ({ name: text(c.name), label: text(c.displayName || c.name), stats: statistics(c.stats) })) }), 30 * 60000);
       } else if (route === 'advanced' && season) {

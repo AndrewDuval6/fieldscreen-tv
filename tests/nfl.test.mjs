@@ -84,7 +84,7 @@ test('NFL service coalesces requests, preserves cached data on failure, backs of
     const responses = await Promise.all([get(),get(),get()]); assert.equal(calls,1);
     const initial = await responses[0].json(); assert.equal(initial.meta.stale,false); assert.equal(initial.meta.updatedAt,clock);
     await get(); assert.equal(calls,1);
-    clock += 31000; fail = true;
+    clock += 26000; fail = true;
     const stale = await (await get()).json(); assert.equal(stale.meta.stale,true); assert.equal(stale.games.length,1); assert.equal(stale.meta.updatedAt,initial.meta.updatedAt);
     await get(); assert.equal(calls,2);
     clock += 61000; fail = false;
