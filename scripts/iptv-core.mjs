@@ -19,6 +19,14 @@ export function filterChannels(channels, { query = '', group = '', filter = 'all
   });
 }
 
+// Filter the entire lineup before applying the display limit. Ordinary lineups
+// fit in one scrollable list; large imports still have bounded DOM rendering.
+export function channelResults(channels, options = {}, page = 0, pageSize = 500) {
+  const matches = filterChannels(channels, options), pages = Math.max(1, Math.ceil(matches.length / pageSize));
+  page = Math.max(0, Math.min(page, pages - 1));
+  return { total: matches.length, page, pages, channels: matches.slice(page * pageSize, (page + 1) * pageSize) };
+}
+
 // Reuse players across pane moves; remove feeds that leave the visible layout.
 export function reconcilePlayers(previous, desired, create, destroy) {
   const unused = new Set(previous), result = [];

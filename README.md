@@ -8,7 +8,7 @@
 
 A television-first NFL control room for game day. Field positions, a featured game, and configurable video/data panes in one 16:9 screen.
 
-**Development preview · v0.1.0-preview.4.** ESPN scores, schedules, all 32 teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. IPTV playback and XMLTV guide matching are included. Wireless casting is still planned.
+**Development preview · v0.1.0-preview.5.** ESPN scores, schedules, all 32 teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. IPTV playback and XMLTV guide matching are included. Wireless casting is still planned.
 
 ## Steam Deck is the TV console
 
@@ -20,9 +20,9 @@ The intended setup is Steam Deck connected to the TV, an Xbox controller, and a 
 
 Linux preview builds are packaged as an **x64 AppImage**, plus a portable `.tar.gz` alternative. They bundle the runtime, fonts, icons, and preview artwork; Node.js and a development server are not needed to run a packaged download.
 
-[**Download the Linux preview**](https://github.com/AndrewDuval6/fieldscreen-tv/releases/tag/v0.1.0-preview.4)
+[**Download the Linux preview**](https://github.com/AndrewDuval6/fieldscreen-tv/releases/tag/v0.1.0-preview.5)
 
-Choose `FieldScreen-TV-0.1.0-preview.4-Linux-x86_64.AppImage`, or the portable `.tar.gz` alternative.
+Choose `FieldScreen-TV-0.1.0-preview.5-Linux-x86_64.AppImage`, or the portable `.tar.gz` alternative.
 
 To launch on Steam Deck:
 
@@ -75,7 +75,9 @@ The installed AppImage has a stable path at `~/Applications/FieldScreen-TV.AppIm
 
 **Refresh channels** reloads your M3U URL or Xtream lineup using the current connection, including session-only connections. It updates channel names and groups, adds new channels, removes missing ones, and shows the last successful update time. Channels whose stream URLs stay the same keep playing; removed or changed streams return their panes to the dashboard. A failed refresh keeps the previous lineup. For an imported M3U file, the button asks you to select an updated file; a local file cannot retrieve provider changes by itself. Remembered file imports update their encrypted saved copy.
 
-The guide joins XMLTV programme channel IDs to the playlist's `tvg-id` (or Xtream `epg_channel_id`). It shows current and upcoming listings, local start times, and searchable descriptions from the next 48 hours. Guide refresh runs every 15 minutes while connected and after a successful channel refresh; **Refresh guide** refreshes immediately. **Find broadcast** on an NFL matchup compares both team names and the scheduled kickoff window with guide titles/descriptions. Listings containing both teams rank first; single-team and channel-name matches are marked as possible matches. Choose the channel yourself, or use **Browse all channels** if the guide has no matching listing. Football discovery uses text and time matching, not video recognition. A scheduled programme does not guarantee that a channel is currently carrying the game. Without guide data, channels remain searchable by name and group.
+The guide joins XMLTV programme channel IDs to the playlist's `tvg-id` (or Xtream `epg_channel_id`). XML and compressed feeds are detected from their contents, including short provider links without a file extension. **Your games** automatically ranks live and upcoming NFL coverage across the whole lineup. **Watch game** selects a current guide listing that names both teams; **Check coverage** shows alternatives when only a team, channel name, or scheduled network matches. Network suggestions are marked as unconfirmed. Matching uses text and kickoff times, not video recognition.
+
+**All channels** searches the entire lineup and the next 48 hours of guide listings. **Ctrl+F** focuses this search. Lineups of up to 500 channels appear in one scrollable list; larger lineups are filtered before pagination. **Update TV guide** lets you replace only the guide link while keeping channels connected. Guide refresh runs every 15 minutes and after channel refresh. Download failures keep the last available listings, report the reason, and honor a retry delay.
 
 M3U/XMLTV files can contain account credentials. Enter them only in the app. They are held in the local service for the current session. The packaged Linux app can optionally remember a provider using an available OS keyring; it refuses insecure plaintext fallback. Browser development sessions do not save provider credentials. **Disconnect & forget** stops playback and removes the saved provider. The app does not send account information to GitHub or an app-operated service; it contacts the provider and the stream/guide servers supplied by that provider.
 

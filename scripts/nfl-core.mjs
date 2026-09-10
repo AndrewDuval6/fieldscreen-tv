@@ -18,12 +18,12 @@ export function fieldPosition(game) {
 export function matchBroadcasts(game, channels, now = Date.now()) {
   const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   const contains = (haystack, name) => (' ' + normalize(haystack) + ' ').includes(' ' + normalize(name) + ' ');
-  const names = t => [t.name, t.fullName].filter(Boolean);
+  const names = t => [t.name, t.fullName, ...(String(t.abbr || '').length >= 3 ? [t.abbr] : [])].filter(Boolean);
   const kickoff = Date.parse(game.date);
   return channels.map(channel => {
     let score = 0, matchedProgram = null, confidence = '';
     for (const program of channel.programs || []) {
-      if (program.end < now || !Number.isFinite(kickoff) || program.start > kickoff + 6 * 3600000 || program.end < kickoff - 30 * 60000) continue;
+      if (program.end <= now || !Number.isFinite(kickoff) || program.start > kickoff + 90 * 60000 || program.end <= kickoff || /\b(replay|classic|highlights|review)\b/i.test(program.title)) continue;
       const text = program.title + ' ' + program.description;
       const a = names(game.away).some(name => contains(text, name)), h = names(game.home).some(name => contains(text, name));
       const candidate = a && h ? 100 : a || h ? 40 : 0;
@@ -31,6 +31,23 @@ export function matchBroadcasts(game, channels, now = Date.now()) {
     }
     const a = names(game.away).some(name => contains(channel.name, name)), h = names(game.home).some(name => contains(channel.name, name));
     if (a && h && score < 60) { score = 60; confidence = 'Matchup in channel name · verify listing'; }
+    // When XMLTV is missing, the schedule's network is a useful lead, not
+    // proof of the game. Do not confuse ESPN2/ESPNews or Fox Sports with FOX.
+    const onNow = (channel.programs || []).find(p => p.start <= now && p.end > now);
+    const conflicting = game.live && onNow && !matchedProgram;
+    const network = String(game.network || '').split(/\s+(?:and|or)\s+|[,/]/i).map(normalize).filter(Boolean);
+    const channelName = normalize(channel.name).replace(/\b(hd|fhd|uhd|4k|us|usa)\b/g, '').trim();
+    const epg = normalize(String(channel.epgId || '').split('.')[0]);
+    if (!game.complete && !conflicting && score < 25 && network.some(n => n === channelName || n === epg)) { score = 25; confidence = 'Scheduled network · guide confirmation unavailable'; }
+    if (!game.complete && !conflicting && score < 20 && (a || h) && /\bnfl\b|american football/i.test(channel.group || '')) { score = 20; confidence = 'Team channel · verify listing'; }
     return { ...channel, matchScore: score, matchedProgram, confidence };
   }).filter(c => c.matchScore > 0).sort((a, b) => b.matchScore - a.matchScore || a.name.localeCompare(b.name));
+}
+
+export function gameCoverage(games, channels, now = Date.now()) {
+  return games.filter(game => !game.complete && (game.live || Date.parse(game.date) >= now && Date.parse(game.date) < now + 48 * 3600000)).sort((a,b) => gamePriority(b, now) - gamePriority(a, now)).map(game => {
+    const matches = matchBroadcasts(game, channels, now);
+    const ready = matches.find(channel => channel.matchScore === 100 && channel.matchedProgram?.start <= now && channel.matchedProgram?.end > now);
+    return { game, matches, ready };
+  });
 }

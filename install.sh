@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Installs the published binary; cloning this repo does not require a source build.
-fieldscreen_version="0.1.0-preview.4"
+fieldscreen_version="0.1.0-preview.5"
 fieldscreen_launch=true
 case "${1:-}" in
   --no-launch) fieldscreen_launch=false ;;

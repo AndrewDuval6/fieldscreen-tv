@@ -105,7 +105,11 @@ async function upstream(value, { signal, range, timeout = 25000 } = {}) {
     }
     if (!response.ok) {
       await response.body?.cancel();
-      throw new PublicError([401, 403].includes(response.status) ? 'The provider refused access. Check your login and subscription.' : `The provider returned error ${response.status}. Try again shortly.`);
+      const error = new PublicError(response.status === 429 ? 'Your provider is limiting guide requests. Please wait before refreshing again.' : [401, 403].includes(response.status) ? 'The provider refused access. Check your login and subscription.' : `The provider returned error ${response.status}. Try again shortly.`);
+      error.status = response.status;
+      const retry = response.headers.get('retry-after');
+      error.retryAfter = Math.min(3600000, Math.max(60000, (Number(retry) * 1000) || (Date.parse(retry) - Date.now()) || 60000));
+      throw error;
     }
     return { response, url: url.href };
   }
@@ -114,12 +118,12 @@ async function upstream(value, { signal, range, timeout = 25000 } = {}) {
 
 function createIPTV({ vault } = {}) {
   const nfl = createNFL();
-  let channels = [], metadata = null, activeConfig = null, connecting = false, generation = 0, channelRevision = 0, guideURL = null, guideLoaded = 0, guideJob = null, guideController = null;
+  let channels = [], metadata = null, activeConfig = null, connecting = false, generation = 0, channelRevision = 0, guideURL = null, guideLoaded = 0, guideJob = null, guideController = null, guideState = {};
   const resources = new Map(), reverse = new Map(), pending = new Set();
   function clear() {
     generation++;
     for (const controller of pending) controller.abort();
-    pending.clear(); channels = []; metadata = null; activeConfig = null; resources.clear(); reverse.clear(); guideURL = null; guideLoaded = 0; guideJob = null; guideController = null;
+    pending.clear(); channels = []; metadata = null; activeConfig = null; resources.clear(); reverse.clear(); guideURL = null; guideLoaded = 0; guideJob = null; guideController = null; guideState = {};
   }
   function register(url, pinned = false) {
     let id = reverse.get(url);
@@ -134,7 +138,7 @@ function createIPTV({ vault } = {}) {
     }
     return PREFIX + 'stream/' + id;
   }
-  async function status() { return { connected: Boolean(metadata), ...metadata, channels, canRemember: Boolean(vault?.available()), saved: Boolean(await vault?.exists()) }; }
+  async function status() { return { connected: Boolean(metadata), ...metadata, ...guideState, channels, canRemember: Boolean(vault?.available()), saved: Boolean(await vault?.exists()) }; }
   async function connect(config, refreshing = false) {
     if (connecting) throw new PublicError('A provider connection is already in progress.');
     connecting = true;
@@ -226,8 +230,9 @@ function createIPTV({ vault } = {}) {
     return connect(config, true);
   }
   async function loadGuide(force) {
-    if (!guideURL || !metadata) return { channels, guideNote: 'No TV guide was supplied. Search channel names, or add an XMLTV guide URL in provider setup.' };
-    if (!force && guideLoaded > Date.now() - 15 * 60000) return { channels, guideUpdated: guideLoaded };
+    if (!guideURL || !metadata) return { channels, guideStatus: 'missing', guideNote: 'Add an XMLTV guide below to identify games automatically.' };
+    if (guideState.guideRetryAt > Date.now()) return { channels, ...guideState };
+    if (!force && guideLoaded > Date.now() - 15 * 60000) return { channels, ...guideState };
     if (guideJob) return guideJob;
     const epoch = generation, revision = channelRevision, controller = new AbortController(); pending.add(controller); guideController = controller;
     const job = (async () => {
@@ -236,11 +241,32 @@ function createIPTV({ vault } = {}) {
         const guide = await guideResponse(response, url, new Set(channels.map(c => c.epgId).filter(Boolean)));
         if (epoch !== generation || revision !== channelRevision) throw new PublicError('The provider connection changed.');
         channels = channels.map(channel => ({ ...channel, programs: guide.get(channel.epgId) || [] })); guideLoaded = Date.now();
-        return { channels, guideUpdated: guideLoaded, guideNote: guide.size ? '' : 'The guide has no matching current listings. Channels are still available.' };
-      } catch { return { channels, guideNote: 'The TV guide is unavailable or unsupported. You can still search and play channels.' }; }
+        const matched = channels.filter(c => c.programs.length).length;
+        const note = matched ? `Guide ready · ${matched} of ${channels.length} channels have listings · games matched automatically` : !channels.some(c => c.epgId) ? 'The playlist has no TV guide IDs. Use a playlist with tvg-id values from your provider.' : !guide.stats.programmes ? 'The guide contains no programmes. Check that this is the provider’s XMLTV link.' : !guide.stats.matchingIds ? 'The guide loaded, but its channel IDs do not match this playlist. Use the XMLTV guide supplied with this M3U.' : guide.stats.latestEnd <= Date.now() ? 'The guide is out of date. Your provider needs to refresh its listings.' : 'The guide has no listings in the next 48 hours. Scheduled games will appear when your provider adds them.';
+        guideState = { guideStatus: matched ? 'ready' : 'empty', guideUpdated: guideLoaded, guideChannels: matched, guideNote: note };
+        return { channels, ...guideState };
+      } catch (error) {
+        if (epoch !== generation || revision !== channelRevision) return { channels, ...guideState };
+        const reason = error instanceof PublicError ? error.message : error.code === 'limit' ? 'The XMLTV feed exceeds the import limit. Use your provider’s smaller sports or country-specific guide.' : ['TimeoutError', 'AbortError'].includes(error.name) ? 'The guide download timed out. Refresh it or use a smaller XMLTV feed.' : /Saxes|Error/.test(error.name) && /(?:line|column|XML|tag|text|character|gzip|header|compression|format)/i.test(error.message) ? 'The guide response is not readable XMLTV. Check that the link downloads XML or XML.gz, rather than a webpage.' : 'The guide could not be downloaded. Check the XMLTV link and your connection.';
+        guideState = { ...guideState, guideStatus: 'error', guideRetryAt: Date.now() + (error.retryAfter || 60000), guideNote: reason + (channels.some(c => c.programs.length) ? ' Keeping the last available listings.' : '') };
+        return { channels, ...guideState };
+      }
       finally { controller.abort(); pending.delete(controller); if (guideJob === job) guideJob = null; if (guideController === controller) guideController = null; }
     })();
     guideJob = job; return job;
+  }
+  async function updateGuide(input) {
+    if (!metadata || !activeConfig) throw new PublicError('Connect a provider first.');
+    if (connecting) throw new PublicError('Wait for the channel refresh to finish before changing the guide.');
+    const next = webURL(input.guideUrl).href;
+    if (next === guideURL && guideState.guideRetryAt > Date.now()) return { channels, ...guideState, hasGuide: true };
+    guideController?.abort(); guideController = null; guideJob = null; guideLoaded = 0; channelRevision++;
+    guideURL = next; guideState = {}; activeConfig = { ...activeConfig, guideUrl: next }; metadata.hasGuide = true;
+    let storageNote = '';
+    if (activeConfig.remember && vault?.available()) {
+      try { await vault.save(activeConfig); } catch { storageNote = 'The new guide is connected for this session, but could not be saved.'; }
+    }
+    return { ...await loadGuide(true), storageNote, hasGuide: true };
   }
   function json(res, code, value) {
     res.writeHead(code, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(JSON.stringify(value));
@@ -298,6 +324,7 @@ function createIPTV({ vault } = {}) {
       if (route === PREFIX + 'connect') return json(res, 200, await connect(config));
       if (route === PREFIX + 'refresh-channels') return json(res, 200, await refreshChannels(config));
       if (route === PREFIX + 'guide') return json(res, 200, await loadGuide(Boolean(config.force)));
+      if (route === PREFIX + 'update-guide') return json(res, 200, await updateGuide(config));
       if (route === PREFIX + 'resume') {
         const saved = await vault?.load();
         if (!saved) throw new PublicError('No saved provider is available. Enter your login again.');

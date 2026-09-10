@@ -1,4 +1,4 @@
-import { gamePriority, fieldPosition, matchBroadcasts } from './nfl-core.mjs';
+import { gamePriority, fieldPosition, matchBroadcasts, gameCoverage } from './nfl-core.mjs';
 
 const root = document.getElementById('fieldscreen-concept'), api = root.fieldscreenConcept;
 const q = selector => root.querySelector(selector), esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -155,6 +155,7 @@ async function refresh() {
 }
 root.fieldscreenNfl = {
   enabled: true, render, afterRender: header, matchBroadcasts,
+  coverage: channels => gameCoverage(state.board?.games || [], channels),
   sourceOptions(source) { return (root.fieldscreenIptv?.sourceOptions(source) || '') + `<optgroup label="NFL scorecards">${(state.board?.games || []).map(g => `<option value="game:${g.id}" ${source === 'game:' + g.id ? 'selected' : ''}>${esc(g.away.abbr)} @ ${esc(g.home.abbr)}</option>`).join('')}</optgroup><optgroup label="NFL data"><option value="dashboard" ${source === 'dashboard' ? 'selected' : ''}>League scoreboard</option><option value="standings" ${source === 'standings' ? 'selected' : ''}>Standings</option></optgroup>`; },
   feed(slot, headerHTML) {
     const source = api.state.slots[slot]; if (String(source).startsWith('iptv:')) return undefined;

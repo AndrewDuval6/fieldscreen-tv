@@ -1,10 +1,10 @@
-import { currentProgram, nextProgram, filterChannels, reconcilePlayers } from './iptv-core.mjs';
+import { currentProgram, nextProgram, channelResults, reconcilePlayers } from './iptv-core.mjs';
 
 const root = document.getElementById('fieldscreen-concept'), api = root.fieldscreenConcept;
 const q = selector => root.querySelector(selector);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 let connection = { channels: [] }, target = 0, mode = 'xtream', view = 'setup', filter = 'all', page = 0, players = [], previousFocus = null, guideBusy = false, matchedGame = null, channelsBusy = false, connectionRevision = 0, guideRevision = 0;
-const PAGE_SIZE = 48;
+let libraryMode = 'games';
 const time = date => new Date(date).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 const when = date => new Date(date).toLocaleDateString([], { weekday: 'short' }) + ' ' + time(date);
 const channelFor = slot => connection.channels.find(channel => 'iptv:' + channel.id === api.state.slots[slot]);
@@ -26,10 +26,14 @@ modal.innerHTML = `<div class="fs-iptv-panel"><header class="fs-iptv-heading"><d
 <label class="fs-remember"><input id="fs-remember" type="checkbox">Remember this provider on this device</label><p id="fs-storage-note" class="fs-muted">Credentials stay on this device for this session.</p><div class="fs-form-actions"><button class="ez-button ez-primary" type="submit" id="fs-connect">Connect provider</button><button class="ez-button" type="button" id="fs-demo">Try sample video</button><button class="ez-button" type="button" id="fs-back-library" hidden>Back to channels</button></div></form></div>
 <div id="fs-library-view" hidden><div class="fs-library-meta"><div class="fs-provider-status"><span id="fs-provider-label"></span><small id="fs-channels-updated"></small></div><div class="fs-library-actions"><button class="ez-button" id="fs-channels-refresh">Refresh channels</button><button class="ez-button" id="fs-guide-refresh">Refresh guide</button><button class="ez-button" id="fs-provider-edit">Provider settings</button><button class="ez-button" id="fs-disconnect">Disconnect & forget</button></div></div><input id="fs-refresh-file" type="file" accept=".m3u,.m3u8,text/plain,audio/x-mpegurl" aria-label="Updated M3U playlist" hidden>
 <div class="fs-targets" aria-label="Choose a destination screen">${[0,1,2,3].map(i => `<button class="fs-target" data-iptv-target="${i}" aria-pressed="${i === 0}"><small>SCREEN 0${i + 1}</small><strong id="fs-target-${i}">Choose a channel</strong></button>`).join('')}</div>
+<div class="fs-library-tabs"><button class="ez-button" data-library-mode="games">Your games</button><button class="ez-button" data-library-mode="channels">All channels</button><span id="fs-guide-health" role="status"></span></div>
+<div id="fs-auto-games" class="fs-auto-games"></div>
+<div id="fs-channel-browser">
 <div id="fs-guide-match" class="fs-guide-match" hidden><div><strong id="fs-guide-match-title"></strong><span>Suggested listings from team names and kickoff time. Check the guide before watching.</span></div><button class="ez-button" id="fs-guide-show-all">Browse all channels</button></div>
 <div class="fs-library-search"><input type="search" id="fs-channel-search" placeholder="Search teams, games, channels…" aria-label="Search teams, games, channels"><select id="fs-channel-group" aria-label="Channel group"><option value="">All groups</option></select></div>
 <div class="fs-library-filters">${[['all','All channels'],['football','Football'],['redzone','RedZone'],['now','On now']].map(([id,label]) => `<button class="ez-button ${id === 'all' ? 'on' : ''}" data-channel-filter="${id}" aria-pressed="${id === 'all'}">${label}</button>`).join('')}<span id="fs-channel-count"></span></div>
-<div id="fs-channel-list" class="fs-channel-list" aria-label="Available channels"></div><div class="fs-library-footer"><span id="fs-guide-note">Listings come from your provider’s guide. NFL scores come from ESPN.</span><button class="ez-button" id="fs-channels-prev">Previous</button><button class="ez-button" id="fs-channels-next">Next</button><button class="ez-button ez-primary" id="fs-watch-wall">Watch wall</button></div></div>
+<div id="fs-channel-list" class="fs-channel-list" aria-label="Available channels"></div></div><div class="fs-library-footer"><span id="fs-guide-note">Listings come from your provider’s guide. NFL scores come from ESPN.</span><button class="ez-button" id="fs-channels-prev">Previous</button><button class="ez-button" id="fs-channels-next">Next</button><button class="ez-button ez-primary" id="fs-watch-wall">Watch wall</button></div>
+<details id="fs-guide-repair"><summary>Update TV guide</summary><form id="fs-guide-form"><label>Paste TV guide link<input type="password" id="fs-repair-url" required placeholder="Your provider’s EPG / XMLTV link" autocomplete="off"></label><button class="ez-button" id="fs-save-guide">Load guide</button></form><small>XMLTV and compressed XML.gz links work here. Your channels stay connected.</small></details></div>
 <div class="fs-provider-message" id="fs-provider-message" role="status" aria-live="polite" hidden></div></div>`;
 root.append(modal);
 const videoLayer = document.createElement('div'); videoLayer.className = 'fs-video-layer'; root.append(videoLayer);
@@ -39,6 +43,7 @@ function message(text, error = false, loading = false) {
 function setView(next) { view = next; q('#fs-provider-view').hidden = next !== 'setup'; q('#fs-library-view').hidden = next !== 'library'; q('#fs-iptv-title').textContent = next === 'setup' ? 'Connect your provider' : 'Find your game'; }
 function open(slot = 0, query = '', game = null) {
   matchedGame = game; q('#fs-channel-search').value = query; q('#fs-channel-group').value = ''; filter = 'all'; page = 0;
+  libraryMode = game || query ? 'channels' : 'games';
   previousFocus = document.activeElement; target = Math.max(0, Math.min(3, slot));
   q('#ez-enter').click(); modal.hidden = false; q('.ez-shell').inert = true; q('.ez-top').inert = true;
   setView(connection.connected ? 'library' : 'setup'); message('');
@@ -51,7 +56,7 @@ modal.addEventListener('click', event => { if (event.target === modal) close(); 
 modal.addEventListener('keydown', event => {
   if (event.key === 'Escape') { event.stopPropagation(); close(); }
   if (event.key === 'Tab') {
-    const controls = [...modal.querySelectorAll('button,input,select')].filter(el => !el.disabled && el.getClientRects().length);
+    const controls = [...modal.querySelectorAll('button,input,select,summary')].filter(el => !el.disabled && el.getClientRects().length);
     const first = controls[0], last = controls.at(-1);
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
@@ -86,7 +91,7 @@ async function connect(config, route = 'connect') {
   message('Connecting your provider and loading channels…', false, true);
   try {
     updateConnection(await request(route, config)); q('#fs-provider-form').reset();
-    setView('library'); filter = 'all'; page = 0; renderLibrary(); message(connection.storageNote || '');
+    setView('library'); libraryMode = 'games'; filter = 'all'; page = 0; renderLibrary(); message(connection.storageNote || '');
     q(`[data-iptv-target="${target}"]`).focus(); void refreshGuide();
   } catch (error) { message(error.message, true); }
   finally { q('#fs-connect').disabled = false; q('#fs-demo').disabled = false; q('#fs-resume').disabled = false; }
@@ -143,50 +148,93 @@ async function refreshGuide(force = false) {
   try {
     const result = await request('guide', { force });
     if (revision !== connectionRevision || ids !== connection.channels.map(c => c.id).join(',')) return;
-    connection.channels = result.channels;
+    Object.assign(connection, result);
     q('#fs-guide-note').textContent = result.guideNote || 'Provider listings · times shown locally · NFL scores from ESPN';
     if (view === 'library') renderLibrary(); api.render();
   } catch (error) { if (revision === connectionRevision) q('#fs-guide-note').textContent = error.message; }
-  finally { if (guideRevision === revision) { guideBusy = false; q('#fs-guide-refresh').disabled = false; } }
+  finally { if (guideRevision === revision) { guideBusy = false; q('#fs-guide-refresh').disabled = false; if (view === 'library') renderLibrary(); } }
 }
 q('#fs-guide-refresh').addEventListener('click', () => refreshGuide(true));
+q('#fs-guide-form').addEventListener('submit', async event => {
+  event.preventDefault(); if (guideBusy) return;
+  const revision = connectionRevision;
+  guideBusy = true; q('#fs-save-guide').disabled = true; q('#fs-guide-refresh').disabled = true;
+  message('Downloading the TV guide and matching games across your lineup…', false, true);
+  try {
+    const result = await request('update-guide', { guideUrl: q('#fs-repair-url').value.trim() });
+    if (revision !== connectionRevision) return;
+    Object.assign(connection, result); q('#fs-repair-url').value = '';
+    q('#fs-guide-note').textContent = result.guideNote; renderLibrary(); api.render();
+    message(result.storageNote || result.guideNote, result.guideStatus === 'error');
+    if (result.guideStatus === 'ready') q('#fs-guide-repair').open = false;
+  } catch (error) { if (revision === connectionRevision) message(error.message, true); }
+  finally { guideBusy = false; q('#fs-save-guide').disabled = false; q('#fs-guide-refresh').disabled = false; if (view === 'library') renderLibrary(); }
+});
+function coverage() { return root.fieldscreenNfl?.coverage(connection.channels) || []; }
+function renderGames() {
+  const games = coverage();
+  const html = games.length ? games.map(({game, matches, ready}) => `<article class="fs-auto-game"><div><small>${game.live ? 'LIVE NOW' : escape(when(game.date))} · ${escape(game.network || 'NFL')}</small><strong>${escape(game.away.fullName)} <span>at</span> ${escape(game.home.fullName)}</strong><p>${ready ? 'Matchup confirmed in your TV guide' : matches.length ? `${matches.length} possible channel${matches.length === 1 ? '' : 's'} · ${escape(matches[0].confidence)}` : guideBusy ? 'Reading your guide…' : 'No matching coverage in the available guide'}</p></div><button class="ez-button ${ready ? 'ez-primary' : ''}" data-coverage-game="${escape(game.id)}">${ready ? 'Watch game ↗' : matches.length ? 'Check coverage' : 'Find coverage'}</button></article>`).join('') : '<div class="fs-no-channels"><strong>No upcoming NFL games loaded</strong><p>Games appear here as the schedule loads. Your channels remain available under All channels.</p></div>';
+  if (q('#fs-auto-games').innerHTML !== html) q('#fs-auto-games').innerHTML = html;
+}
 function renderLibrary() {
   q('#fs-provider-label').textContent = `${connection.provider || ''} · ${connection.channels.length.toLocaleString()} channels${connection.maxConnections ? ` · ${connection.maxConnections} provider connections allowed` : ''}`;
   q('#fs-channels-updated').textContent = connection.channelsUpdated ? `Channels updated ${time(connection.channelsUpdated)}` : '';
   q('#fs-channels-updated').title = connection.channelsUpdated ? new Date(connection.channelsUpdated).toLocaleString() : '';
+  q('#fs-guide-health').textContent = guideBusy ? 'Matching your guide…' : connection.guideStatus === 'ready' ? `${connection.guideChannels} channels with listings` : 'Guide needs attention';
+  q('#fs-channel-search').placeholder = `Search all ${connection.channels.length.toLocaleString()} channels and guide listings…`;
+  q('#fs-channel-search').setAttribute('aria-label', 'Search all channels and guide listings');
+  q('#fs-auto-games').hidden = libraryMode !== 'games'; q('#fs-channel-browser').hidden = libraryMode !== 'channels';
+  modal.querySelectorAll('[data-library-mode]').forEach(b => { b.classList.toggle('on', b.dataset.libraryMode === libraryMode); b.setAttribute('aria-pressed', String(b.dataset.libraryMode === libraryMode)); });
+  if (libraryMode === 'games') renderGames();
   modal.querySelectorAll('[data-iptv-target]').forEach(b => { const i = Number(b.dataset.iptvTarget); b.setAttribute('aria-pressed', String(i === target)); q('#fs-target-' + i).textContent = channelFor(i)?.name || (api.state.slots[i] === 'dashboard' ? 'League dashboard' : 'Choose a channel'); });
   modal.querySelectorAll('[data-channel-filter]').forEach(b => { b.classList.toggle('on', b.dataset.channelFilter === filter); b.setAttribute('aria-pressed', String(b.dataset.channelFilter === filter)); });
   q('#fs-guide-match').hidden = !matchedGame;
   if (matchedGame) q('#fs-guide-match-title').textContent = `${matchedGame.away.fullName} at ${matchedGame.home.fullName} · ${when(matchedGame.date)}`;
   const candidates = matchedGame ? root.fieldscreenNfl.matchBroadcasts(matchedGame, connection.channels) : connection.channels;
-  const matches = filterChannels(candidates, { query: q('#fs-channel-search').value, group: q('#fs-channel-group').value, filter });
-  page = Math.max(0, Math.min(page, Math.ceil(matches.length / PAGE_SIZE) - 1));
-  const current = matches.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-  q('#fs-channel-count').textContent = `${matches.length.toLocaleString()} found · screen 0${target + 1}`;
-  q('#fs-channel-list').innerHTML = current.length ? current.map(channel => {
+  const result = channelResults(candidates, { query: q('#fs-channel-search').value, group: q('#fs-channel-group').value, filter }, page);
+  page = result.page; const current = result.channels;
+  q('#fs-channel-count').textContent = `${result.total.toLocaleString()} matches across the full lineup${result.pages > 1 ? ` · page ${page + 1} of ${result.pages}` : ''}`;
+  const channelHTML = current.length ? current.map(channel => {
     const program = channel.matchedProgram || currentProgram(channel), next = nextProgram(channel), selected = channelFor(target)?.id === channel.id;
     return `<button class="fs-channel ${selected ? 'fs-selected' : ''}" data-iptv-channel="${channel.id}" aria-pressed="${selected}"><span class="fs-channel-symbol">${program ? (program.start <= Date.now() && program.end > Date.now() ? 'ON<br>NOW' : 'GUIDE') : 'TV'}</span><span class="fs-channel-copy"><strong>${escape(program?.title || channel.name)}</strong><span>${escape(program ? channel.name + ' · ' + time(program.start) + '–' + time(program.end) : channel.group)}</span>${channel.confidence ? `<small class="fs-match-confidence">${escape(channel.confidence)}</small>` : ''}${next ? `<small>Next · ${escape(when(next.start))} · ${escape(next.title)}</small>` : '<small>Choose to watch this channel</small>'}</span><span class="fs-channel-action">${selected ? 'Playing' : 'Watch'} ↗</span></button>`;
   }).join('') : '<div class="fs-no-channels"><strong>No matching channels</strong><p>No matching listing is available with these filters. Browse all channels or refresh your guide; upcoming games may be outside its 48-hour window.</p></div>';
-  q('#fs-channels-prev').disabled = page === 0; q('#fs-channels-next').disabled = (page + 1) * PAGE_SIZE >= matches.length;
+  if (q('#fs-channel-list').innerHTML !== channelHTML) q('#fs-channel-list').innerHTML = channelHTML;
+  q('#fs-channels-prev').disabled = page === 0; q('#fs-channels-next').disabled = page + 1 >= result.pages;
+  q('#fs-channels-prev').hidden = q('#fs-channels-next').hidden = libraryMode === 'games' || result.pages === 1;
 }
 q('#fs-guide-show-all').addEventListener('click', () => { matchedGame = null; q('#fs-channel-search').value = ''; q('#fs-channel-group').value = ''; filter = 'all'; page = 0; renderLibrary(); });
 function showWall() { q('[data-tv-view="watch"]').click(); sync(); }
+function selectChannel(channel, watch = false) {
+  api.state.slots[target] = 'iptv:' + channel.id; api.state.audio = target;
+  if (target > 1 && ['single', 'split'].includes(api.state.layout)) api.state.layout = 'quad';
+  if (target === 1 && api.state.layout === 'single') api.state.layout = 'split';
+  showWall(); renderLibrary();
+  if (watch) close();
+  else { message(`Screen 0${target + 1}: ${channel.name}. Choose another screen, or open the watch wall.`); q(`[data-iptv-target="${Math.min(3, target + 1)}"]`).focus(); }
+}
 q('#fs-watch-wall').addEventListener('click', () => { close(); showWall(); });
 modal.addEventListener('click', event => {
   const b = event.target.closest('button'); if (!b) return;
+  if (b.dataset.libraryMode) { libraryMode = b.dataset.libraryMode; matchedGame = null; renderLibrary(); }
+  if (b.dataset.coverageGame) {
+    const item = coverage().find(item => String(item.game.id) === b.dataset.coverageGame);
+    if (item?.ready) selectChannel(item.ready, true);
+    else if (item) { matchedGame = item.game; libraryMode = 'channels'; filter = 'all'; page = 0; q('#fs-channel-search').value = ''; q('#fs-channel-group').value = ''; renderLibrary(); }
+  }
   if (b.dataset.iptvTarget !== undefined) { target = Number(b.dataset.iptvTarget); renderLibrary(); }
   if (b.dataset.channelFilter) { matchedGame = null; filter = b.dataset.channelFilter; page = 0; renderLibrary(); }
   if (b.dataset.iptvChannel) {
     const channel = connection.channels.find(c => c.id === b.dataset.iptvChannel); if (!channel) return;
-    api.state.slots[target] = 'iptv:' + channel.id; api.state.audio = target;
-    if (target > 1 && ['single', 'split'].includes(api.state.layout)) api.state.layout = 'quad';
-    if (target === 1 && api.state.layout === 'single') api.state.layout = 'split';
-    showWall(); renderLibrary();
-    message(`Screen 0${target + 1}: ${channel.name}. Choose another screen, or open the watch wall.`);
-    q(`[data-iptv-target="${Math.min(3, target + 1)}"]`).focus();
+    selectChannel(channel);
   }
 });
-q('#fs-channel-search').addEventListener('input', () => { page = 0; renderLibrary(); });
+q('#fs-channel-search').addEventListener('input', () => { matchedGame = null; filter = 'all'; q('#fs-channel-group').value = ''; page = 0; renderLibrary(); q('#fs-channel-list').scrollTop = 0; });
+document.addEventListener('keydown', event => {
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f' && connection.connected) {
+    event.preventDefault(); event.stopImmediatePropagation(); if (modal.hidden) open();
+    libraryMode = 'channels'; matchedGame = null; filter = 'all'; q('#fs-channel-group').value = ''; page = 0; renderLibrary(); q('#fs-channel-search').focus(); q('#fs-channel-search').select();
+  }
+}, true);
 q('#fs-channel-group').addEventListener('change', () => { page = 0; renderLibrary(); });
 q('#fs-channels-prev').addEventListener('click', () => { page--; renderLibrary(); q('#fs-channel-list').scrollTop = 0; });
 q('#fs-channels-next').addEventListener('click', () => { page++; renderLibrary(); q('#fs-channel-list').scrollTop = 0; });
@@ -268,7 +316,17 @@ root.addEventListener('click', event => {
 new MutationObserver(sync).observe(q('#ez-body'), { childList: true });
 new ResizeObserver(place).observe(root);
 window.addEventListener('resize', place); window.addEventListener('beforeunload', () => players.forEach(p => p.destroy()));
-setInterval(() => { if (connection.connected && !modal.hidden && view === 'library') renderLibrary(); }, 60000);
+window.addEventListener('focus', async () => {
+  const revision = connectionRevision;
+  try {
+    const value = await request('status');
+    if (revision !== connectionRevision || value.connected === connection.connected && value.channelsUpdated === connection.channelsUpdated) return;
+    updateConnection(value);
+    if (!modal.hidden) { setView(value.connected ? 'library' : 'setup'); if (value.connected) renderLibrary(); }
+    if (value.connected) void refreshGuide();
+  } catch { /* Retain the current screen if the local service is restarting. */ }
+});
+setInterval(() => { if (connection.connected && !modal.hidden && view === 'library' && !modal.contains(document.activeElement?.closest('input'))) renderLibrary(); }, 10000);
 setInterval(() => { if (connection.connected) void refreshGuide(); }, 15 * 60000);
 type('xtream');
 request('status').then(value => { updateConnection(value); if (value.connected) void refreshGuide(); }).catch(() => { q('#fs-storage-note').textContent = 'Open the Linux app or run the local browser preview to connect IPTV.'; });
