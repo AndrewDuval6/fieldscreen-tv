@@ -8,7 +8,8 @@ const dateLabel = d => new Date(d+'T12:00:00').toLocaleDateString([],{weekday:'s
 const time = g => g.timeTBD ? dateLabel(g.officialDate || g.date.slice(0,10))+' · Time TBD' : new Date(g.date).toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
 const label = g => g.state === 'pre' ? time(g) : gameLabel(g);
 const button = (label,attrs='') => `<button class="ez-button" ${attrs}>${label}</button>`;
-const watch = (g,slot) => button(g.complete ? 'Final' : 'Watch game ↗',`data-mlb-watch="${g.id}" ${slot === undefined ? '' : `data-watch-slot="${slot}"`} ${g.complete || g.away.placeholder || g.home.placeholder ? 'disabled' : ''}`);
+const record = g => g.complete || g.timeTBD || g.home.placeholder || g.away.placeholder ? '' : button('● Record game',`data-record-game="mlb:${g.id}"`);
+const watch = (g,slot) => button(g.complete ? 'Final' : 'Watch game ↗',`data-mlb-watch="${g.id}" ${slot === undefined ? '' : `data-watch-slot="${slot}"`} ${g.complete || g.away.placeholder || g.home.placeholder ? 'disabled' : ''}`) + record(g);
 const state = { panel:'gameday',board:null,post:null,standings:null,teams:[],team:'147',teamData:null,detail:null,selected:null,date:null,season:new Date().getFullYear(),league:'AL',race:false,auto:true,page:0,stage:'all',loading:true,errors:{},busy:new Map() };
 const generations = new Map();
 const active = () => root.fieldscreenSports.active() === 'mlb';
@@ -128,6 +129,7 @@ function render() {
   if(q('.fs-nfl-scroll'))q('.fs-nfl-scroll').scrollTop=scroll;if(identity&&!focused.isConnected&&q('#fs-iptv-modal').hidden)q(identity)?.focus({preventScroll:true});header();return true;
 }
 const module = {
+  game: id => games().find(g=>g.id===id),
   render,afterRender:header,matchBroadcasts,liveBroadcast,
   activate(){state.panel='gameday';api.state.view='gameday';refresh();},
   coverage:channels=>gameCoverage(games(),channels),statusText:()=>fresh(state.board),

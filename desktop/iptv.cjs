@@ -8,6 +8,7 @@ const { guideResponse } = require('./guide.cjs');
 const { createNFL } = require('./nfl.cjs');
 const { createMLB } = require('./mlb.cjs');
 const { chooseBroadcast } = require('./broadcast.cjs');
+const { createRecorder } = require('./recorder.cjs');
 
 const PREFIX = '/preview/iptv/';
 const LIMIT = 12 * 1024 * 1024;
@@ -118,7 +119,7 @@ async function upstream(value, { signal, range, timeout = 25000 } = {}) {
   throw new PublicError('The provider redirected too many times.');
 }
 
-function createIPTV({ vault } = {}) {
+function createIPTV({ vault, recordingCount = () => 0 } = {}) {
   const nfl = createNFL(), mlb = createMLB();
   let channels = [], metadata = null, activeConfig = null, connecting = false, generation = 0, channelRevision = 0, guideURL = null, guideLoaded = 0, guideJob = null, guideController = null, guideState = {};
   const resources = new Map(), reverse = new Map(), pending = new Set();
@@ -301,7 +302,7 @@ function createIPTV({ vault } = {}) {
         try {
           const { response, url } = await upstream(resource.url, { signal: controller.signal, range: req.headers.range, timeout: resource.pinned && !/\.m3u8(?:\?|$)/i.test(resource.url) ? 0 : 120000 });
           const contentType = response.headers.get('content-type') || 'application/octet-stream';
-          if (/mpegurl/i.test(contentType) || /\.m3u8(?:\?|$)/i.test(url) || /\.m3u8(?:\?|$)/i.test(resource.url)) {
+          if (resource.hls || /mpegurl/i.test(contentType) || /\.m3u8(?:\?|$)/i.test(url) || /\.m3u8(?:\?|$)/i.test(resource.url)) {
             const manifest = await limitedText(response);
             if (!manifest.trimStart().startsWith('#EXTM3U')) throw new PublicError('This channel did not return a playable HLS stream.');
             const body = rewriteManifest(manifest, url, register);
@@ -340,7 +341,7 @@ function createIPTV({ vault } = {}) {
         const controller = new AbortController(); pending.add(controller); broadcastJob = true;
         const abort = () => controller.abort(); res.on('close', abort);
         try {
-          const canProbe = !metadata.maxConnections || metadata.maxConnections > Math.max(0, Number(config.playing) || 0);
+          const canProbe = !metadata.maxConnections || metadata.maxConnections > Math.max(0, Number(config.playing) || 0) + recordingCount();
           return json(res, 200, await chooseBroadcast(candidates, { upstream, cache: broadcastCache, signal: controller.signal, canProbe }));
         } finally { controller.abort(); pending.delete(controller); broadcastJob = false; res.off('close', abort); }
       }
@@ -369,14 +370,46 @@ function createIPTV({ vault } = {}) {
       else res.destroy();
     }
   }
-  return { handle, close() { clear(); nfl.close(); mlb.close(); } };
+  return { handle, snapshot: status,
+    async resolve(job, playing) {
+      if (!metadata) {
+        const saved = await vault?.load();
+        if (!saved) throw new Error('provider unavailable');
+        await connect(saved);
+      }
+      if (metadata.maxConnections && playing >= metadata.maxConnections) throw new Error('connections in use');
+      let candidates;
+      if (job.game) {
+        await loadGuide(false);
+        const { matchBroadcasts } = await import('../scripts/broadcast-core.mjs');
+        candidates = matchBroadcasts({ ...job.game, live: true }, channels).filter(c => c.matchScore === 100 && c.matchedProgram.start <= Date.now() + 120000 && c.matchedProgram.end > Date.now());
+      } else candidates = channels.filter(c => c.id === job.channel?.id || job.channel?.epgId && c.epgId === job.channel.epgId && c.name === job.channel.name);
+      if (!candidates.length) return null;
+      const picks = candidates.slice(0,3).map(c => ({ id: c.id, url: resources.get(c.stream.slice((PREFIX+'stream/').length))?.url })).filter(c => c.url);
+      const selected = picks.length > 1 ? await chooseBroadcast(picks, { upstream, cache: broadcastCache, canProbe: !metadata.maxConnections || metadata.maxConnections > playing + 1 }) : null;
+      const channel = candidates.find(c => c.id === selected?.channelId) || candidates[0];
+      if (channel.format === 'auto') {
+        const resource = resources.get(channel.stream.slice((PREFIX+'stream/').length));
+        const { response } = await upstream(resource.url, {timeout:5000});
+        const reader = response.body?.getReader();
+        try {
+          const first = await reader?.read();
+          const head = Buffer.from(first?.value || []).toString('utf8',0,64).trimStart();
+          if (/mpegurl/i.test(response.headers.get('content-type') || '') || head.startsWith('#EXTM3U')) { channel.format = 'hls'; resource.hls = true; }
+          else if (first?.value?.[0] === 0x47) channel.format = 'mpegts';
+        } finally { await reader?.cancel().catch(() => {}); }
+      }
+      return channel;
+    },
+    close() { clear(); nfl.close(); mlb.close(); } };
 }
 
-async function startLocalServer({ directory, vault, port = 0 } = {}) {
-  const iptv = createIPTV({ vault });
+async function startLocalServer({ directory, vault, port = 0, recordings } = {}) {
+  let recorder;
+  const iptv = createIPTV({ vault, recordingCount: () => recorder?.count() || 0 });
   const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.woff2': 'font/woff2', '.txt': 'text/plain' };
   const server = http.createServer((req, res) => {
-    iptv.handle(req, res, async () => {
+    const route = () => iptv.handle(req, res, async () => {
       try {
         const url = new URL(req.url, 'http://127.0.0.1');
         const relative = decodeURIComponent(url.pathname.replace(/^\/preview\//, ''));
@@ -387,9 +420,26 @@ async function startLocalServer({ directory, vault, port = 0 } = {}) {
         res.end(req.method === 'HEAD' ? undefined : body);
       } catch { res.writeHead(404); res.end(); }
     });
+    if (recorder) void recorder.handle(req, res, route).catch(() => res.destroy()); else void route();
   });
   await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); });
-  return { url: `http://127.0.0.1:${server.address().port}/preview/index.html`, server, close() { iptv.close(); server.closeAllConnections(); server.close(); } };
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  try { if (recordings) recorder = await createRecorder({ ...recordings, provider: iptv, origin: () => origin }); }
+  catch {
+    // A damaged DVR catalog must not stop the dashboard or live television.
+    // Keep the original catalog and all video files untouched for recovery.
+    const message = 'Recording storage could not be opened. Your video files have been left in place. Check access to the app recordings catalog before trying again.';
+    const status = async () => ({supported:false,folder:'',storage:{ready:false,free:0,note:message},jobs:[],error:message,active:0,scheduled:0,engineReady:false});
+    recorder = {status,hasWork:()=>false,count:()=>0,close(){},async shutdown(){},async setFolder(){throw new Error(message);},
+      async handle(req,res,next){
+        if (!req.url?.startsWith('/preview/recordings/')) return next();
+        const safe = req.headers.host === new URL(origin).host && (!req.headers.origin || req.headers.origin === origin) && req.headers['sec-fetch-site'] !== 'cross-site' && req.headers['x-fieldscreen'] === '1';
+        const read = safe && req.method === 'GET' && req.url === '/preview/recordings/status';
+        res.writeHead(safe ? read ? 200 : 503 : 403, {'Content-Type':'application/json','Cache-Control':'no-store','Cross-Origin-Resource-Policy':'same-origin'});
+        res.end(JSON.stringify(read ? await status() : {error:message}));
+      }};
+  }
+  return { url: origin + '/preview/index.html', server, recorder, close() { recorder?.close(); iptv.close(); server.closeAllConnections(); server.close(); } };
 }
 
 module.exports = { createIPTV, startLocalServer, parseM3U, rewriteManifest, webURL };

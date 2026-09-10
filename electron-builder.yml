@@ -19,6 +19,12 @@ files:
 extraFiles:
   - from: public/preview
     to: resources/public/preview
+  - from: desktop/recorder
+    to: resources/recorder
+    filter:
+      - ffmpeg
+      - '*LICENSE.txt'
+      - NOTICE.txt
 asar: true
 compression: normal
 linux:

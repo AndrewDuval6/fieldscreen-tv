@@ -3,7 +3,7 @@ import { currentProgram, nextProgram, channelResults, reconcilePlayers, redZoneC
 const root = document.getElementById('fieldscreen-concept'), api = root.fieldscreenConcept;
 const q = selector => root.querySelector(selector);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-let connection = { channels: [] }, target = 0, mode = 'xtream', view = 'setup', filter = 'all', page = 0, players = [], previousFocus = null, guideBusy = false, matchedGame = null, channelsBusy = false, connectionRevision = 0, guideRevision = 0;
+let connection = { channels: [] }, target = 0, mode = 'xtream', view = 'setup', filter = 'all', page = 0, players = [], previousFocus = null, guideBusy = false, matchedGame = null, channelsBusy = false, connectionRevision = 0, guideRevision = 0, playbackMuted = false;
 let libraryMode = 'games';
 let guideRequest = null, watchRevision = 0;
 const time = date => new Date(date).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
@@ -327,13 +327,27 @@ q('#fs-channels-next').addEventListener('click', () => { page++; renderLibrary()
 
 function createPlayer(channel) {
   const element = document.createElement('div'); element.className = 'fs-live-player';
-  element.innerHTML = '<video playsinline></video><div class="fs-player-state"><img src="./fieldscreen-mark.png" alt=""><strong>CONNECTING</strong><div class="fs-player-meter"></div><span></span><button class="ez-button" hidden>Retry stream</button></div>';
+  element.innerHTML = '<video playsinline></video><div class="fs-player-state"><img src="./fieldscreen-mark.png" alt=""><strong>CONNECTING</strong><div class="fs-player-meter"></div><span></span><button class="ez-button" hidden>Retry stream</button></div><div class="fs-live-controls"><button data-player-pause aria-label="Pause live video">Pause</button><button data-player-live>Go live</button><button data-player-record="'+escape(channel.id)+'">● Record</button></div>';
   const video = element.querySelector('video'), layer = element.querySelector('.fs-player-state'), label = layer.querySelector('strong'), detail = layer.querySelector('span'), retry = layer.querySelector('button');
   video.muted = true; video.autoplay = true; video.preload = 'none'; video.setAttribute('aria-label', channel.name); videoLayer.append(element);
   const player = { element, video, channel, hls: null, ts: null, disposed: false, slot: -1 };
-  let recovery = 0, loadingTimeout, playbackFormat = channel.format;
+  let recovery = 0, loadingTimeout, playbackFormat = channel.format, pausedByUser = false;
+  const pauseButton = element.querySelector('[data-player-pause]');
+  const pauseState = () => { element.classList.toggle('is-paused', pausedByUser); pauseButton.textContent=pausedByUser?'Play':'Pause';pauseButton.setAttribute('aria-label',pausedByUser?'Resume live video':'Pause live video'); };
+  pauseButton.addEventListener('click', () => {
+    pausedByUser = !pausedByUser;
+    if(pausedByUser) { video.pause();clearTimeout(loadingTimeout);layer.hidden=true; }
+    else { if(video.seekable.length&&video.currentTime<video.seekable.start(0))video.currentTime=video.seekable.start(0); play(); }
+    pauseState();
+  });
+  element.querySelector('[data-player-live]').addEventListener('click', () => {
+    pausedByUser=false;pauseState();
+    if(player.hls?.liveSyncPosition)video.currentTime=player.hls.liveSyncPosition;
+    else if(video.seekable.length)video.currentTime=Math.max(video.seekable.start(0),video.seekable.end(video.seekable.length-1)-1);
+    play();
+  });
   function state(title, text = '', canRetry = false) { layer.hidden = false; label.textContent = title; detail.textContent = text; retry.hidden = !canRetry; layer.classList.toggle('fs-player-failed', canRetry); }
-  function play() { video.play().catch(() => { if (!player.disposed) { state('PRESS PLAY', 'Select to start this channel.', true); retry.textContent = 'Play channel'; } }); }
+  function play() { if(pausedByUser)return;video.play().catch(() => { if (!player.disposed) { state('PRESS PLAY', 'Select to start this channel.', true); retry.textContent = 'Play channel'; } }); }
   function failure() { clearTimeout(loadingTimeout); state('STREAM UNAVAILABLE', 'Check the channel, supported video format, or your provider’s connection limit.', true); retry.textContent = 'Retry stream'; }
   function start() {
     recovery = 0; player.hls?.destroy(); player.hls = null; player.ts?.destroy(); player.ts = null; video.pause(); video.removeAttribute('src'); video.load();
@@ -357,7 +371,7 @@ function createPlayer(channel) {
     } else failure();
   }
   video.addEventListener('playing', () => { clearTimeout(loadingTimeout); layer.hidden = true; });
-  video.addEventListener('waiting', () => { state('BUFFERING', channel.name); clearTimeout(loadingTimeout); loadingTimeout = setTimeout(failure, 30000); });
+  video.addEventListener('waiting', () => { if(pausedByUser)return;state('BUFFERING', channel.name); clearTimeout(loadingTimeout); loadingTimeout = setTimeout(failure, 30000); });
   video.addEventListener('error', () => { if (!player.hls && !player.ts && !player.disposed) failure(); });
   video.addEventListener('ended', () => { state('BROADCAST ENDED', 'Replay or choose another channel.', true); });
   retry.addEventListener('click', () => { if (retry.textContent === 'Play channel') play(); else start(); });
@@ -375,16 +389,19 @@ function place() {
 }
 function sync() {
   const count = api.state.layout === 'single' ? 1 : api.state.layout === 'split' ? 2 : 4;
-  const desired = api.state.view === 'watch' && !root.classList.contains('ez-director') ? Array.from({ length: count }, (_, slot) => ({ slot, channel: channelFor(slot) })).filter(item => item.channel) : [];
+  const desired = !document.hidden && api.state.view === 'watch' && !root.classList.contains('ez-director') ? Array.from({ length: count }, (_, slot) => ({ slot, channel: channelFor(slot) })).filter(item => item.channel) : [];
   players = reconcilePlayers(players, desired, createPlayer, player => player.destroy());
   if (players.length && root.fieldscreenPanes?.slot() == null && !players.some(p => p.slot === api.state.audio)) api.state.audio = players[0].slot;
-  players.forEach(player => { player.video.muted = player.slot !== api.state.audio; });
+  players.forEach(player => { player.video.muted = playbackMuted || player.slot !== api.state.audio; });
   root.querySelectorAll('[data-audio]').forEach(b => { const active = Number(b.dataset.audio) === api.state.audio; b.setAttribute('aria-pressed', String(active)); b.closest('.ez-feed')?.classList.toggle('has-audio', active); if (b.closest('.fs-iptv-feed')) b.textContent = active ? 'AUDIO FOCUS' : 'SELECT AUDIO'; });
   const note = q('.ez-watch-note p');
   if (note) note.textContent = players.length ? `${players.length} channel${players.length > 1 ? 's' : ''} playing · one audio focus. ${connection.maxConnections ? `Your provider allows ${connection.maxConnections} simultaneous connections.` : 'Each playing pane uses one provider connection.'} ${root.fieldscreenSports?.statusText() || 'Connecting sports data…'}` : 'Choose Channels on any pane to watch your provider, or keep the league scoreboard alongside a game.';
   requestAnimationFrame(place);
 }
 root.fieldscreenIptv = {
+  channel: id => connection.channels.find(c=>c.id===id),
+  playingCount: () => players.length,
+  suspendAudio() { playbackMuted=true;players.forEach(p=>p.video.muted=true);return ()=>{playbackMuted=false;players.forEach(p=>p.video.muted=p.slot!==api.state.audio);}; },
   refreshLayout: sync,
   openGame: watchGame,
   connected: () => Boolean(connection.connected),
@@ -406,7 +423,9 @@ root.addEventListener('click', event => {
 new MutationObserver(sync).observe(q('#ez-body'), { childList: true });
 new ResizeObserver(place).observe(root);
 window.addEventListener('resize', place); window.addEventListener('beforeunload', () => players.forEach(p => p.destroy()));
+window.fieldscreenDesktop?.onBackground(()=>{players.forEach(p=>p.destroy());players=[];});
 window.addEventListener('focus', async () => {
+  sync();
   const revision = connectionRevision;
   try {
     const value = await request('status');

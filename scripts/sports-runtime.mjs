@@ -14,6 +14,7 @@ function switchSport(league) {
 root.fieldscreenSports = {
   register(league,module) { modules.set(league,module); if (league === preference) switchSport(league); },
   active: () => active, switchSport,
+  game: (league,id) => modules.get(league)?.game(id),
   render: () => modules.get(active)?.render() || false,
   afterRender: () => modules.get(active)?.afterRender?.(),
   sourceOptions(source) { const selected = ['dashboard','standings'].includes(source) ? active+':'+source : source; return (root.fieldscreenIptv?.sourceOptions(source) || '') + [...modules.values()].map(m => m.sourceOptions(selected,false)).join(''); },

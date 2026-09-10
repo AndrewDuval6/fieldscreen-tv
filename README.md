@@ -8,7 +8,7 @@
 
 A television-first sports control room, starting with NFL and MLB. Field positions, a featured game, and configurable video/data panes in one 16:9 screen.
 
-**Development preview · v0.1.0-preview.8.** ESPN scores, schedules, all 32 NFL teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. MLB scores, daily schedules, all 30 teams, live diamonds, standings, wild-card races, and postseason series are connected. IPTV playback and XMLTV guide matching are included. Wireless casting is still planned.
+**Development preview · v0.1.0-preview.9.** ESPN scores, schedules, all 32 NFL teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. MLB scores, daily schedules, all 30 teams, live diamonds, standings, wild-card races, and postseason series are connected. IPTV playback, XMLTV guide matching, local recording, scheduled recording, and a saved-video library are included. Wireless casting is still planned.
 
 ## Steam Deck is the TV console
 
@@ -20,9 +20,9 @@ The intended setup is Steam Deck connected to the TV, an Xbox controller, and a 
 
 Linux preview builds are packaged as an **x64 AppImage**, plus a portable `.tar.gz` alternative. They bundle the runtime, fonts, icons, and preview artwork; Node.js and a development server are not needed to run a packaged download.
 
-[**Download the Linux preview**](https://github.com/AndrewDuval6/fieldscreen-tv/releases/tag/v0.1.0-preview.8)
+[**Download the Linux preview**](https://github.com/AndrewDuval6/fieldscreen-tv/releases/tag/v0.1.0-preview.9)
 
-Choose `FieldScreen-TV-0.1.0-preview.8-Linux-x86_64.AppImage`, or the portable `.tar.gz` alternative.
+Choose `FieldScreen-TV-0.1.0-preview.9-Linux-x86_64.AppImage`, or the portable `.tar.gz` alternative.
 
 To launch on Steam Deck:
 
@@ -35,7 +35,7 @@ Valve documents adding apps to the Deck library in its [Desktop Mode FAQ](https:
 
 If AppImage mounting is unavailable on a Linux installation, extract the `.tar.gz` download and add its `fieldscreen-tv` executable to Steam instead.
 
-The AppImage opens full screen for TV use. The installer’s desktop shortcut opens in a window; you can also pass `--windowed` when launching from a terminal. **F11** or the on-screen **Window / Fullscreen** button switches between the two. **Exit** closes it. Display sleep is inhibited only while the desktop app is running.
+The AppImage opens full screen for TV use. The installer’s desktop shortcut opens in a window; you can also pass `--windowed` when launching from a terminal. **F11** or the on-screen **Window / Fullscreen** button switches between the two. **Exit** quits the app; if recordings are active or scheduled, it offers to keep running in the background. Closing the window keeps scheduled recordings running and leaves a tray icon to reopen it. Display sleep is inhibited while the window is visible; pending recordings prevent system sleep while the app remains running.
 
 ## Controller
 
@@ -88,6 +88,21 @@ Standard HTTP HLS and MPEG-TS playback are included, plus browser-compatible MP4
 
 Each visible video pane uses a provider connection. Four games normally require four allowed connections and sufficient bandwidth/decoding performance. Moving a game to the main pane preserves its player. Changing to a smaller layout stops hidden streams; selecting another view or disconnecting stops the watch-wall players. Only one video is audible. NFL and MLB scorecards, league scoreboards, and standings remain available alongside live video.
 
+## Record games on your computer
+
+Open **Recordings** in the top bar and choose a storage folder with the system folder picker. FieldScreen verifies that it can write, read, and remove a test file there, and shows available space. The folder choice and recording schedule are remembered locally. No cloud storage or separate recording software is needed.
+
+- **Pause / Go live** appear over live video. Pause uses the player's limited live buffer; it is not unlimited rewind or catch-up.
+- **Record** on a live screen saves that channel. Choose a duration, then start. Recording continues when you switch sports or change panes. Open **Recordings** to stop it early.
+- **Record game** in NFL/MLB schedules or game details saves a future recording. It starts two minutes before the listed game time and searches your XMLTV guide for both teams. Unavailable coverage is retried for up to 30 minutes, then marked missed. Use a remembered provider for recordings after an app restart.
+- **Recordings** holds scheduled, active, saved, partial, and failed entries. Play saved games inside the app, seek with the timeline or 30-second controls, open their folder, or explicitly delete a video and its entry.
+
+Keep the computer powered on, online, and FieldScreen running. Closing the window keeps pending recordings running in the tray; fully quitting or shutting down stops recording. This preview does not wake a powered-off computer or launch itself after a reboot. Saved start times are fixed: cancel and schedule again if the league changes the game time. Choose enough duration for overtime or extra innings.
+
+Up to two recordings can run together, subject to the provider's connection allowance. Each recording uses an additional connection beyond live viewing. Space is checked before recording and while it runs; the recorder stops if available space drops below 1 GB. Changing the folder affects new recordings; existing scheduled jobs retain their original folder. Partial video is retained when possible after interruption.
+
+Recordings are fragmented MP4 files with the original video and AAC audio. HLS and MPEG-TS inputs are tested with generated media, including extensionless HLS addresses. Video compatibility still depends on the provider's codec and this device's playback support. Recording starts at connection time; earlier footage cannot be recovered. Physical Steam Deck testing and recording an entire live sports broadcast are still pending.
+
 ## Baseball
 
 Use the **NFL / MLB** selector in the top bar to switch sports. Your last sport is remembered on this device. Both sports share your saved IPTV provider, guide, fullscreen controls, and multiview. Choose NFL or MLB scorecards individually in each pane.
@@ -124,6 +139,7 @@ The installed app retrieves and caches data locally. IPTV guide contents and pro
 - Full-screen, split, four-pane, and one-plus-three layouts mixing IPTV, NFL, and MLB data.
 - M3U URL/file import, Xtream login, XMLTV matching, team/channel search, and now/next listings.
 - Matchup-to-guide broadcast discovery and real single-pane audio focus.
+- Live play/pause, local MP4 recording, scheduled NFL/MLB recordings, and a saved-game library.
 - Stadium and Night themes, branded connection loaders, and reduced-motion support.
 
 ## Still to build
@@ -138,9 +154,12 @@ Requires Node.js 24 or later and npm.
 
 ```sh
 npm ci
+npm run build:recorder
 npm test
 npm run desktop
 ```
+
+Building the recorder needs Python 3.12+, GCC, make, binutils, and xz on Linux x86-64. The build script verifies source checksums and builds a static executable; system FFmpeg is used only to generate test fixtures.
 
 For the browser version, run `npm run dev -- --host 127.0.0.1`. For a Linux download, run `npm run package:linux`. Built packages appear in `release/`. See [preview security scope](SECURITY.md) before using the browser development entry.
 
@@ -148,6 +167,6 @@ For the browser version, run `npm run dev -- --host 127.0.0.1`. For a Linux down
 
 ## Artwork and dependencies
 
-The penguin/football emblem and stadium backdrop are original generated artwork. The backdrop is not a photograph of a live game. The logo was created with the built-in image generator; its [prompt](design/logo-prompt.txt) is included for provenance. Field diagrams use reported NFL positions; they are schematic views, not player-tracking data. Fonts are distributed under the licenses included with their packages. Icons come from Lucide. Video playback uses [hls.js](https://github.com/video-dev/hls.js) and [mpegts.js](https://github.com/xqq/mpegts.js); XMLTV parsing uses [saxes](https://github.com/lddubeau/saxes). Their licenses are included in the package. Third-party dependencies retain their respective licenses. This is an independent fan project, not an official NFL, MLB, or Yahoo product.
+The penguin/football emblem and stadium backdrop are original generated artwork. The backdrop is not a photograph of a live game. The logo was created with the built-in image generator; its [prompt](design/logo-prompt.txt) is included for provenance. Field diagrams use reported NFL positions; they are schematic views, not player-tracking data. Fonts are distributed under the licenses included with their packages. Icons come from Lucide. Video playback uses [hls.js](https://github.com/video-dev/hls.js) and [mpegts.js](https://github.com/xqq/mpegts.js); XMLTV parsing uses [saxes](https://github.com/lddubeau/saxes). Their licenses are included in the package. Recording uses a separate [FFmpeg](https://ffmpeg.org/) executable (LGPL 2.1 or later) with [musl](https://musl.libc.org/) (MIT). Their notices and licenses are bundled. Complete unmodified sources and the build script are provided as `FieldScreen-Recorder-Sources-8.1.2.tar.gz` alongside every recording-enabled release. Extract it and run `python3 build-recorder.py --source-dir . --output ./recorder` to rebuild offline; the portable app allows replacing `resources/recorder/ffmpeg`. Third-party dependencies retain their respective licenses. This is an independent fan project, not an official NFL, MLB, or Yahoo product.
 
 The source is published for inspection and download. An open-source license for the project has not been selected; third-party licenses still apply.

@@ -17,6 +17,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: npm run build:recorder
       - run: npm test
       - run: npm run build
       - run: npm run package:linux

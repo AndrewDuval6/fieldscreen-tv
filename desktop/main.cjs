@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Menu, powerSaveBlocker, safeStorage } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, powerSaveBlocker, safeStorage, dialog, Tray, shell } = require('electron');
 const path = require('node:path');
 const { startLocalServer } = require('./iptv.cjs');
 const { createVault, configurePasswordStore } = require('./vault.cjs');
@@ -7,6 +7,7 @@ let window;
 let wakeLock;
 let localServer;
 let rendererFailed = false;
+let tray, quitReady = false, quitPending = false;
 const smokeTest = process.argv.includes('--smoke-test');
 const startFullscreen = !smokeTest && !process.argv.includes('--windowed');
 const directory = path.join(__dirname, '..', 'public', 'preview');
@@ -19,7 +20,17 @@ else {
   app.on('second-instance', () => { window?.show(); window?.focus(); });
   app.whenReady().then(async () => {
     const vault = createVault(path.join(app.getPath('userData'), 'provider.enc'), safeStorage);
-    localServer = await startLocalServer({ directory, vault });
+    const refreshBackground = () => {
+      if (!window || window.isDestroyed() || smokeTest) return;
+      if (wakeLock !== undefined && powerSaveBlocker.isStarted(wakeLock)) powerSaveBlocker.stop(wakeLock);
+      wakeLock = window.isVisible() ? powerSaveBlocker.start('prevent-display-sleep') : localServer?.recorder.hasWork() ? powerSaveBlocker.start('prevent-app-suspension') : undefined;
+      tray?.setToolTip(localServer?.recorder.count() ? 'FieldScreen TV — recording' : 'FieldScreen TV');
+    };
+    localServer = await startLocalServer({ directory, vault, recordings: {
+      stateFile: path.join(app.getPath('userData'), 'recordings.json'),
+      ffmpeg: app.isPackaged ? path.join(process.resourcesPath,'recorder','ffmpeg') : path.join(__dirname,'recorder','ffmpeg'),
+      onChange: refreshBackground,
+    } });
     Menu.setApplicationMenu(null);
     window = new BrowserWindow({
       title: 'FieldScreen TV — Preview', width: 1600, height: 900,
@@ -41,6 +52,17 @@ else {
       }
     });
     const isMainFrame = event => event.sender === window.webContents && event.senderFrame === window.webContents.mainFrame;
+    ipcMain.handle('fieldscreen:recording-folder', async event => {
+      if (!isMainFrame(event)) throw new Error('Main window only');
+      const result = await dialog.showOpenDialog(window, { title: 'Choose a folder for recorded games', buttonLabel: 'Save recordings here', defaultPath: (await localServer.recorder.status()).folder || app.getPath('videos'), properties: ['openDirectory','createDirectory'] });
+      if (result.canceled || !result.filePaths[0]) return null;
+      return localServer.recorder.setFolder(result.filePaths[0]);
+    });
+    ipcMain.handle('fieldscreen:open-recording-folder', async event => {
+      if (!isMainFrame(event)) throw new Error('Main window only');
+      const folder = (await localServer.recorder.status()).folder;
+      if (folder) return shell.openPath(folder);
+    });
     ipcMain.handle('fieldscreen:window-state', event => {
       if (!isMainFrame(event)) throw new Error('Main window only');
       return { fullscreen: window.isFullScreen() };
@@ -61,6 +83,19 @@ else {
     ipcMain.on('fieldscreen:quit', event => {
       if (event.sender === window.webContents && event.senderFrame === window.webContents.mainFrame) app.quit();
     });
+    if (!smokeTest) {
+      tray = new Tray(path.join(__dirname,'icon.png'));
+      tray.setToolTip('FieldScreen TV');
+      tray.setContextMenu(Menu.buildFromTemplate([
+        { label: 'Open FieldScreen TV', click: () => { window.show(); window.focus(); } },
+        { label: 'Quit FieldScreen TV', click: () => app.quit() },
+      ]));
+      tray.on('click', () => { window.show(); window.focus(); });
+      window.on('close', event => {
+        if (!quitReady && localServer.recorder.hasWork()) { event.preventDefault(); window.webContents.send('fieldscreen:background'); window.hide(); }
+      });
+      window.on('hide', refreshBackground); window.on('show', refreshBackground);
+    }
     window.webContents.on('did-fail-load', (_event, code, message) => {
       console.error(`FieldScreen failed to load (${code}): ${message}`);
       if (smokeTest) app.exit(1);
@@ -80,7 +115,6 @@ else {
         }, 3000);
       } else {
         window.show();
-        wakeLock = powerSaveBlocker.start('prevent-display-sleep');
       }
     });
     window.loadURL(localServer.url + (process.argv.includes('--connect-iptv') ? '#connect-iptv' : ''));
@@ -88,7 +122,19 @@ else {
   }).catch(() => { console.error('FieldScreen TV could not start its local player service.'); app.exit(1); });
 }
 app.on('window-all-closed', () => app.quit());
+app.on('before-quit', event => {
+  if (quitReady || !localServer?.recorder || smokeTest) return;
+  event.preventDefault(); if (quitPending) return; quitPending = true;
+  void (async () => {
+    if (localServer.recorder.hasWork()) {
+      const choice = await dialog.showMessageBox(window, { type:'question', title:'Keep your recordings running?', message:'FieldScreen has active or scheduled recordings.', detail:'Keep it running in the background to record. Quitting stops active recordings, and upcoming games cannot record until you open FieldScreen again.', buttons:['Keep running','Quit and stop recording'], defaultId:0, cancelId:0 });
+      if (choice.response !== 1) { window.webContents.send('fieldscreen:background'); window.hide(); quitPending = false; return; }
+    }
+    await localServer.recorder.shutdown(); quitReady = true; app.quit();
+  })().catch(() => { quitPending = false; });
+});
 app.on('will-quit', () => {
+  tray?.destroy();
   localServer?.close();
   if (wakeLock !== undefined && powerSaveBlocker.isStarted(wakeLock)) powerSaveBlocker.stop(wakeLock);
 });

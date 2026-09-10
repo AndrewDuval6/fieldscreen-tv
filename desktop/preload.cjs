@@ -1,5 +1,8 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('fieldscreenDesktop', {
+  chooseRecordingFolder: () => ipcRenderer.invoke('fieldscreen:recording-folder'),
+  openRecordingFolder: () => ipcRenderer.invoke('fieldscreen:open-recording-folder'),
+  onBackground: callback => { const listener = () => callback(); ipcRenderer.on('fieldscreen:background',listener); return () => ipcRenderer.removeListener('fieldscreen:background',listener); },
   quit: () => ipcRenderer.send('fieldscreen:quit'),
   windowState: () => ipcRenderer.invoke('fieldscreen:window-state'),
   toggleFullscreen: () => ipcRenderer.invoke('fieldscreen:toggle-fullscreen'),

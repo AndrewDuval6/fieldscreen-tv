@@ -7,7 +7,7 @@ const supported = ['single', 'split', 'quad', 'focus'];
 let lastInput = {}, controllerIndex = null, activeControl = null, lastFrame = 0;
 
 function visibleControls() {
-  const dialog = !q('#fs-iptv-modal').hidden ? q('#fs-iptv-modal') : !q('#ez-launch').hidden ? q('#ez-launch') : !q('#ez-overlay').hidden ? q('#ez-overlay') : root;
+  const dialog = root.fieldscreenRecordings?.isOpen() ? q('#fs-recordings-modal') : !q('#fs-iptv-modal').hidden ? q('#fs-iptv-modal') : !q('#ez-launch').hidden ? q('#ez-launch') : !q('#ez-overlay').hidden ? q('#ez-overlay') : root;
   return [...dialog.querySelectorAll('button, select, input')].filter(element => {
     const rect = element.getBoundingClientRect();
     return rect.width > 0 && rect.height > 0 && !element.disabled && !element.closest('[inert]');
@@ -15,7 +15,7 @@ function visibleControls() {
 }
 function focus(element) {
   root.querySelectorAll('.ez-controller-focus').forEach(el => el.classList.remove('ez-controller-focus'));
-  if (element) { activeControl = element; element.classList.add('ez-controller-focus'); element.focus({ preventScroll: true }); if (element.closest('#fs-iptv-modal,.fs-nfl-scroll,.fs-watch-data')) element.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
+  if (element) { activeControl = element; element.classList.add('ez-controller-focus'); element.focus({ preventScroll: true }); if (element.closest('#fs-iptv-modal,#fs-recordings-modal,.fs-nfl-scroll,.fs-watch-data')) element.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
 }
 function move(direction) {
   const controls = visibleControls();
@@ -30,6 +30,10 @@ function cycleSource(select, amount) {
   focus(pane === undefined ? (select.id ? q('#' + CSS.escape(select.id)) : select) : q('[data-screen="' + pane + '"]'));
 }
 function action(name) {
+  if (root.fieldscreenRecordings?.isOpen()) {
+    if (name === 'back') { root.fieldscreenRecordings.back(); return; }
+    if (['director','multiview','audio','layout','demo'].includes(name)) return;
+  }
   if (root.fieldscreenPanes?.slot() != null) {
     if (name === 'back') { root.fieldscreenPanes.exit(); return; }
     if (name === 'director' || name === 'multiview') root.fieldscreenPanes.exit();
@@ -72,7 +76,7 @@ function poll(now) {
     input.actions.forEach(action);
     const scrollAxis = pad.axes?.[3] || 0;
     if (Math.abs(scrollAxis) > .25) {
-      const scroller = !q('#fs-iptv-modal').hidden ? q('#fs-channel-list') : document.activeElement?.closest('.fs-nfl-scroll,.fs-watch-data') || q('.fs-nfl-scroll') || q('.fs-watch-data');
+      const scroller = root.fieldscreenRecordings?.isOpen() ? q('.fs-rec-content') : !q('#fs-iptv-modal').hidden ? q('#fs-channel-list') : document.activeElement?.closest('.fs-nfl-scroll,.fs-watch-data') || q('.fs-nfl-scroll') || q('.fs-watch-data');
       if (scroller) scroller.scrollTop += scrollAxis * Math.min(40, now - lastFrame) * root.clientWidth / 1920;
     }
     if (activeControl && !activeControl.isConnected) focus(visibleControls().includes(document.activeElement) ? document.activeElement : visibleControls()[0]);
