@@ -86,6 +86,13 @@ root.addEventListener('pointerdown', () => {
   root.querySelectorAll('.ez-controller-focus').forEach(el => el.classList.remove('ez-controller-focus'));
 });
 if (window.fieldscreenDesktop) {
+  const toggle = document.createElement('button'); toggle.className = 'ez-button ez-native-fullscreen'; toggle.textContent = 'Window / Fullscreen';
+  toggle.title = 'Toggle fullscreen · F11';
+  const showWindowState = state => { toggle.textContent = state.fullscreen ? 'Window · F11' : 'Fullscreen · F11'; toggle.setAttribute('aria-label', state.fullscreen ? 'Leave fullscreen' : 'Enter fullscreen'); };
+  toggle.addEventListener('click', async () => { toggle.disabled = true; try { showWindowState(await window.fieldscreenDesktop.toggleFullscreen()); } finally { toggle.disabled = false; } });
+  window.fieldscreenDesktop.onWindowState(showWindowState);
+  window.fieldscreenDesktop.windowState().then(showWindowState);
+  q('.ez-top').append(toggle);
   const exit = document.createElement('button'); exit.className = 'ez-button ez-native-exit'; exit.textContent = 'Exit';
   exit.addEventListener('click', () => window.fieldscreenDesktop.quit()); q('.ez-top').append(exit);
 }
@@ -94,4 +101,5 @@ hint.textContent = 'A SELECT · X AUDIO / PIN · Y LAYOUT / AUTO · LB/RB VIEW �
 q('.ez-bottom').append(hint);
 api.state.tv = true; api.render();
 q('#ez-intro').click();
+if (window.fieldscreenDesktop && window.location.hash === '#connect-iptv') root.fieldscreenIptv.open();
 requestAnimationFrame(poll);

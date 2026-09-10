@@ -8,6 +8,7 @@ let wakeLock;
 let localServer;
 let rendererFailed = false;
 const smokeTest = process.argv.includes('--smoke-test');
+const startFullscreen = !smokeTest && !process.argv.includes('--windowed');
 const directory = path.join(__dirname, '..', 'public', 'preview');
 
 app.setName('FieldScreen TV');
@@ -21,7 +22,7 @@ else {
     Menu.setApplicationMenu(null);
     window = new BrowserWindow({
       title: 'FieldScreen TV — Preview', width: 1600, height: 900,
-      minWidth: 960, minHeight: 540, fullscreen: !smokeTest,
+      minWidth: 960, minHeight: 540, fullscreen: startFullscreen,
       backgroundColor: '#07140f', show: false, autoHideMenuBar: true,
       icon: path.join(__dirname, 'icon.png'),
       webPreferences: {
@@ -34,9 +35,22 @@ else {
     window.webContents.on('will-navigate', event => event.preventDefault());
     window.webContents.session.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
     window.webContents.on('before-input-event', (event, input) => {
-      if (input.type === 'keyDown' && input.key === 'F11') {
+      if (input.type === 'keyDown' && (input.key === 'F11' || input.code === 'F11') && !input.isAutoRepeat) {
         event.preventDefault(); window.setFullScreen(!window.isFullScreen());
       }
+    });
+    const isMainFrame = event => event.sender === window.webContents && event.senderFrame === window.webContents.mainFrame;
+    ipcMain.handle('fieldscreen:window-state', event => {
+      if (!isMainFrame(event)) throw new Error('Main window only');
+      return { fullscreen: window.isFullScreen() };
+    });
+    ipcMain.handle('fieldscreen:toggle-fullscreen', event => {
+      if (!isMainFrame(event)) throw new Error('Main window only');
+      const fullscreen = !window.isFullScreen(); window.setFullScreen(fullscreen);
+      return { fullscreen };
+    });
+    for (const name of ['enter-full-screen', 'leave-full-screen']) window.on(name, () => {
+      window.webContents.send('fieldscreen:window-state', { fullscreen: window.isFullScreen() });
     });
     ipcMain.on('fieldscreen:quit', event => {
       if (event.sender === window.webContents && event.senderFrame === window.webContents.mainFrame) app.quit();
@@ -63,7 +77,7 @@ else {
         wakeLock = powerSaveBlocker.start('prevent-display-sleep');
       }
     });
-    window.loadURL(localServer.url);
+    window.loadURL(localServer.url + (process.argv.includes('--connect-iptv') ? '#connect-iptv' : ''));
     if (smokeTest) setTimeout(() => app.exit(1), 15000).unref();
   }).catch(() => { console.error('FieldScreen TV could not start its local player service.'); app.exit(1); });
 }

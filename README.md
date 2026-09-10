@@ -6,7 +6,7 @@
 
 A television-first NFL control room for game day. Field positions, a featured game, and configurable video/data panes in one 16:9 screen.
 
-**Development preview · v0.1.0-preview.3.** ESPN scores, schedules, all 32 teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. IPTV playback and XMLTV guide matching are included. Wireless casting is still planned.
+**Development preview · v0.1.0-preview.4.** ESPN scores, schedules, all 32 teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. IPTV playback and XMLTV guide matching are included. Wireless casting is still planned.
 
 ## Steam Deck is the TV console
 
@@ -18,9 +18,9 @@ The intended setup is Steam Deck connected to the TV, an Xbox controller, and a 
 
 Linux preview builds are packaged as an **x64 AppImage**, plus a portable `.tar.gz` alternative. They bundle the runtime, fonts, icons, and preview artwork; Node.js and a development server are not needed to run a packaged download.
 
-[**Download the Linux preview**](https://github.com/AndrewDuval6/fieldscreen-tv/releases/tag/v0.1.0-preview.3)
+[**Download the Linux preview**](https://github.com/AndrewDuval6/fieldscreen-tv/releases/tag/v0.1.0-preview.4)
 
-Choose `FieldScreen-TV-0.1.0-preview.3-Linux-x86_64.AppImage`, or the portable `.tar.gz` alternative.
+Choose `FieldScreen-TV-0.1.0-preview.4-Linux-x86_64.AppImage`, or the portable `.tar.gz` alternative.
 
 To launch on Steam Deck:
 
@@ -33,7 +33,7 @@ Valve documents adding apps to the Deck library in its [Desktop Mode FAQ](https:
 
 If AppImage mounting is unavailable on a Linux installation, extract the `.tar.gz` download and add its `fieldscreen-tv` executable to Steam instead.
 
-The preview opens full screen with a skippable introduction. **F11** toggles the native window's full-screen state. **Exit** closes it. Display sleep is inhibited only while the desktop app is running.
+The AppImage opens full screen for TV use. The installer’s desktop shortcut opens in a window; you can also pass `--windowed` when launching from a terminal. **F11** or the on-screen **Window / Fullscreen** button switches between the two. **Exit** closes it. Display sleep is inhibited only while the desktop app is running.
 
 ## Controller
 
@@ -50,6 +50,18 @@ The preview opens full screen with a skippable introduction. **F11** toggles the
 | Menu | Refresh NFL scores in Director |
 
 Standard-mapped controllers use the browser Gamepad API. Mouse and keyboard controls also work. Automated tests cover navigation, provider import, stream proxying, guide matching, credential-storage policy, and player reuse; hardware compatibility is not yet verified. Entering provider details may need a keyboard or Steam’s on-screen keyboard.
+
+## Install from a terminal
+
+Clone the repo and run its installer. It downloads the packaged Linux app from GitHub, checks SHA256SUMS, and adds an application-menu shortcut. No Node.js, source build, or administrator access is needed. Git and curl must be available.
+
+```bash
+git clone https://github.com/AndrewDuval6/fieldscreen-tv.git &&
+cd fieldscreen-tv &&
+./install.sh
+```
+
+The installed AppImage has a stable path at `~/Applications/FieldScreen-TV.AppImage`. The desktop shortcut opens windowed; adding the AppImage itself to Steam opens the TV experience full screen. Use `./install.sh --no-launch` to install without opening it. Close the running app before updating; from the cloned folder, run `git pull --ff-only && ./install.sh`.
 
 ## Connect IPTV and find games
 
