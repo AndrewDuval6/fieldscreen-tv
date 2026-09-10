@@ -95,7 +95,8 @@ test('A damaged recording catalog leaves the live app usable and preserves the o
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),'fieldscreen-catalog-'));let service;
   try{
     const stateFile=path.join(dir,'state.json');await fs.writeFile(stateFile,'damaged but do not replace');
-    service=await startLocalServer({directory:path.resolve('public/preview'),recordings:{stateFile,ffmpeg:engine}});
+    await fs.writeFile(path.join(dir,'index.html'),'<h1>Live app fixture</h1>');
+    service=await startLocalServer({directory:dir,recordings:{stateFile,ffmpeg:engine}});
     assert.equal((await fetch(service.url)).status,200);
     const response=await fetch(new URL('recordings/status',service.url),{headers:{'X-FieldScreen':'1'}});
     const status=await response.json();assert.equal(status.supported,false);assert.match(status.error,/left in place/);
