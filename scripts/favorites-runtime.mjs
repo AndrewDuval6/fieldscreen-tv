@@ -29,6 +29,8 @@ async function loadSaved() {
 }
 async function toggle(key) {
   if (!ready || saving) return;
+  // The first selection stays in the picker so several teams can be followed.
+  if (active() && !favorites.length) editing = true;
   saving = true;
   try {
     const next = favorites.includes(key) ? favorites.filter(k => k !== key) : [...favorites, key];
@@ -60,7 +62,7 @@ async function refresh(force = false) {
   await Promise.allSettled(requests);
 }
 function open() {
-  root.fieldscreenPanes?.exit(); api.state.view = 'favorites'; editing = false;
+  root.fieldscreenPanes?.exit(); api.state.view = 'favorites'; editing = !favorites.length;
   api.render(); void refresh();
   q('#fs-favorites-manage')?.focus();
 }
