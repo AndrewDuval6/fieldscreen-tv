@@ -1,4 +1,4 @@
-# Local IPTV security scope
+# Local data and IPTV security scope
 
 The packaged desktop app runs a bundled interface inside sandboxed Electron with context isolation and no renderer Node.js access. It starts a Node HTTP service bound only to `127.0.0.1` on an ephemeral port. The preload bridge exposes only Exit. Navigation, new windows, and permission prompts are denied. Content policy allows bundled scripts and local media/proxy requests, with blob workers for video decoding.
 
@@ -11,3 +11,5 @@ Playlist imports are limited to 12 MB and 50,000 channels. XMLTV parsing is stre
 The React/Vinext/Cloudflare browser entry is retained for local development. Those server/build dependencies are not bundled into the desktop runtime. A dependency audit on September 9, 2026 reports 11 advisories in that retained development stack (8 high, 2 moderate, 1 low). The desktop service uses Node built-ins and the bundled XML parser, independent of that framework stack. Keep the development entry bound to localhost and address the advisories before any public hosting. This app is not a remotely accessible IPTV relay.
 
 Do not post passwords, credential-bearing IPTV/EPG URLs, OAuth tokens, or API keys in issues. Reproduce provider problems with a sanitized fixture whenever possible.
+
+NFL data endpoints are read-only and accept validated season/week/team/game IDs, never arbitrary upstream URLs. Requests go only to fixed ESPN endpoints and nflverse GitHub release assets. Response size and time are bounded; concurrent reads share a short-lived memory cache. They use the same loopback and same-origin controls as IPTV setup. Provider credentials and guide contents are not included in NFL data requests.

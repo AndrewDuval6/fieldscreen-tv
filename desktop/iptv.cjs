@@ -5,6 +5,7 @@ const { pipeline } = require('node:stream/promises');
 const { readFile } = require('node:fs/promises');
 const path = require('node:path');
 const { guideResponse } = require('./guide.cjs');
+const { createNFL } = require('./nfl.cjs');
 
 const PREFIX = '/preview/iptv/';
 const LIMIT = 12 * 1024 * 1024;
@@ -112,6 +113,7 @@ async function upstream(value, { signal, range, timeout = 25000 } = {}) {
 }
 
 function createIPTV({ vault } = {}) {
+  const nfl = createNFL();
   let channels = [], metadata = null, connecting = false, generation = 0, guideURL = null, guideLoaded = 0, guideJob = null;
   const resources = new Map(), reverse = new Map(), pending = new Set();
   function clear() {
@@ -216,6 +218,7 @@ function createIPTV({ vault } = {}) {
     res.writeHead(code, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(JSON.stringify(value));
   }
   async function handle(req, res, next = () => { res.writeHead(404); res.end(); }) {
+    if (req.url?.startsWith('/preview/nfl/')) return nfl.handle(req, res, next);
     const route = req.url?.split('?')[0];
     if (!route?.startsWith(PREFIX)) return next();
     res.setHeader('Cache-Control', 'no-store'); res.setHeader('Referrer-Policy', 'no-referrer');
@@ -278,7 +281,7 @@ function createIPTV({ vault } = {}) {
       else res.destroy();
     }
   }
-  return { handle, close: clear };
+  return { handle, close() { clear(); nfl.close(); } };
 }
 
 async function startLocalServer({ directory, vault, port = 0 } = {}) {

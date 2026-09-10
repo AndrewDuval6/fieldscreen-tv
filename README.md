@@ -6,7 +6,7 @@
 
 A television-first NFL control room for game day. Field positions, a featured game, and configurable video/data panes in one 16:9 screen.
 
-**Development preview · v0.1.0-preview.1.** Scores and events are simulated. IPTV playback and XMLTV guide browsing are included. Live NFL scores/statistics and wireless casting are not connected in this version.
+**Development preview · v0.1.0-preview.2.** ESPN scores, schedules, all 32 teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. IPTV playback and XMLTV guide matching are included. Wireless casting is still planned.
 
 ## Steam Deck is the TV console
 
@@ -18,9 +18,9 @@ The intended setup is Steam Deck connected to the TV, an Xbox controller, and a 
 
 Linux preview builds are packaged as an **x64 AppImage**, plus a portable `.tar.gz` alternative. They bundle the runtime, fonts, icons, and preview artwork; Node.js and a development server are not needed to run a packaged download.
 
-[**Download the Linux preview**](https://github.com/AndrewDuval6/fieldscreen-tv/releases/tag/v0.1.0-preview.1)
+[**Download the Linux preview**](https://github.com/AndrewDuval6/fieldscreen-tv/releases/tag/v0.1.0-preview.2)
 
-Choose `FieldScreen-TV-0.1.0-preview.1-Linux-x86_64.AppImage`, or the portable `.tar.gz` alternative.
+Choose `FieldScreen-TV-0.1.0-preview.2-Linux-x86_64.AppImage`, or the portable `.tar.gz` alternative.
 
 To launch on Steam Deck:
 
@@ -46,7 +46,8 @@ The preview opens full screen with a skippable introduction. **F11** toggles the
 | X | Select a pane's audio; pin the featured game in Director |
 | Y | Change multiview layout; toggle automatic focus in Director |
 | LB / RB | Director / Multiview |
-| Menu | Play / pause the Sunday simulation in Director |
+| Right stick | Scroll schedules, statistics, scoreboards, or the guide |
+| Menu | Refresh NFL scores in Director |
 
 Standard-mapped controllers use the browser Gamepad API. Mouse and keyboard controls also work. Automated tests cover navigation, provider import, stream proxying, guide matching, credential-storage policy, and player reuse; hardware compatibility is not yet verified. Entering provider details may need a keyboard or Steam’s on-screen keyboard.
 
@@ -58,27 +59,43 @@ Standard-mapped controllers use the browser Gamepad API. Mouse and keyboard cont
 4. Search for a team, matchup, or channel. Filter by group, **Football**, **RedZone**, or **On now**.
 5. Choose a destination screen, then **Watch** on a channel. Assign additional screens, then open **Watch wall**.
 
-The guide joins XMLTV programme channel IDs to the playlist's `tvg-id` (or Xtream `epg_channel_id`). It shows current and upcoming listings, local start times, and searchable descriptions from the next 48 hours. Guide refresh runs every 15 minutes while connected; **Refresh guide** refreshes immediately. Football discovery is a name/description filter, not video recognition or an official sports feed. A scheduled programme does not guarantee that a channel is currently carrying the game. Without guide data, channels remain searchable by name and group.
+The guide joins XMLTV programme channel IDs to the playlist's `tvg-id` (or Xtream `epg_channel_id`). It shows current and upcoming listings, local start times, and searchable descriptions from the next 48 hours. Guide refresh runs every 15 minutes while connected; **Refresh guide** refreshes immediately. **Find broadcast** on an NFL matchup compares both team names and the scheduled kickoff window with guide titles/descriptions. Listings containing both teams rank first; single-team and channel-name matches are marked as possible matches. Choose the channel yourself, or use **Browse all channels** if the guide has no matching listing. Football discovery uses text and time matching, not video recognition. A scheduled programme does not guarantee that a channel is currently carrying the game. Without guide data, channels remain searchable by name and group.
 
 M3U/XMLTV files can contain account credentials. Enter them only in the app. They are held in the local service for the current session. The packaged Linux app can optionally remember a provider using an available OS keyring; it refuses insecure plaintext fallback. Browser development sessions do not save provider credentials. **Disconnect & forget** stops playback and removes the saved provider. The app does not send account information to GitHub or an app-operated service; it contacts the provider and the stream/guide servers supplied by that provider.
 
 Standard HTTP HLS and MPEG-TS playback are included, plus browser-compatible MP4/WebM links. Video/audio codecs must be supported by the bundled browser; H.264/AAC is the most broadly compatible combination. DRM-protected streams, UDP/RTSP, proprietary headers, and provider-specific authentication beyond the supplied URL/login are not implemented. A public **Try sample video** option checks a Mux-hosted Big Buck Bunny stream; it is not an NFL broadcast.
 
-Each visible video pane uses a provider connection. Four games normally require four allowed connections and sufficient bandwidth/decoding performance. Moving a game to the main pane preserves its player. Changing to a smaller layout stops hidden streams; selecting another view or disconnecting stops the watch-wall players. Only one video is audible. Sample data panes remain available alongside live video.
+Each visible video pane uses a provider connection. Four games normally require four allowed connections and sufficient bandwidth/decoding performance. Moving a game to the main pane preserves its player. Changing to a smaller layout stops hidden streams; selecting another view or disconnecting stops the watch-wall players. Only one video is audible. NFL scorecards, the league scoreboard, and standings remain available alongside live video.
+
+## NFL data
+
+The dashboard starts on the current NFL week. **Game Day** automatically focuses live games, prioritizing red-zone possessions and close fourth quarters; before kickoff, it features the next scheduled game. You can pin any matchup and page through the field wall. Scheduled games show kickoff time and no invented score. Field markers appear only when ESPN reports a recognizable possession and position, with offense moving left to right.
+
+**Schedule** selects a season, stage, and week. **Game details** includes quarter scores, team statistics, recent/scoring plays, and player leaders when published. **Standings** covers all eight divisions. **Team Lab** offers all 32 teams, season/category selection, and advanced nflverse statistics. Before the first game, Team Lab defaults to the previous season; each statistics panel identifies its season.
+
+Scores and open game details refresh every 30 seconds while the page is visible. Standings refresh every 10 minutes; team statistics are cached for 30 minutes and nflverse season totals for six hours. Failed requests retain the last successful response and label it **CACHED** with its original timestamp. Data can lag the broadcast. Postponements, missing statistics, and unpublished seasons are shown as unavailable rather than filled with sample numbers.
+
+Sources:
+
+- [ESPN scoreboard](https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard), [teams](https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams), and [standings](https://site.api.espn.com/apis/v2/sports/football/nfl/standings?level=3), plus ESPN game summaries and team statistics. These publicly reachable endpoints currently require no API key but are undocumented and unsupported for this app. Availability and response formats can change; access is not a production service guarantee or a redistribution license.
+- [nflverse data](https://github.com/nflverse/nflverse-data), used under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). FieldScreen selects, normalizes, and rounds team regular-season statistics for display. Consult the [update schedule](https://nflreadr.nflverse.com/articles/nflverse_data_schedule.html): advanced statistics are published after games, not a live feed. A new season file may not yet exist.
+
+The installed app retrieves and caches data locally. IPTV guide contents and provider credentials are never sent to ESPN or nflverse. NFL data access does not include a video broadcast; streams come from the provider you connect.
 
 ## Included in the preview
 
-- Sunday Director: six sample games, event progression, automatic selection, and manual pinning.
-- Detailed proportioned fields with home-team end zones, yard numbers, NFL hash marks, and sample possession markers.
-- Full-screen, split, four-pane, and one-plus-three layouts.
-- Assign IPTV channels (including your provider’s RedZone), sample games, scores, or standings to panes.
-- M3U URL/file import, Xtream login, XMLTV EPG matching, team/channel search, and now/next listings.
-- Real single-pane audio focus; information-only panes do not receive audio focus.
-- Stadium and Night themes, loading previews, and reduced-motion support.
+- Sunday Director with real NFL data, automatic focus, manual pinning, and a paged field wall.
+- Detailed proportioned fields with home-team end zones, yard numbers, NFL hash marks, and reported possession markers.
+- Schedules, eight-division standings, game details, and all 32 teams with historical season statistics.
+- nflverse advanced metrics, including EPA, CPOE, air yards, sacks, and QB hits where published.
+- Full-screen, split, four-pane, and one-plus-three layouts mixing IPTV and NFL data.
+- M3U URL/file import, Xtream login, XMLTV matching, team/channel search, and now/next listings.
+- Matchup-to-guide broadcast discovery and real single-pane audio focus.
+- Stadium and Night themes, branded connection loaders, and reduced-motion support.
 
 ## Still to build
 
-Live scores, all 32 teams, schedules, standings, team and game statistics, saved layouts, casting, and hardware verification. The Yahoo fantasy companion remains a separate project.
+Saved layouts, casting, additional TV platforms, and hardware verification. The Yahoo fantasy companion remains a separate project.
 
 Do not add IPTV credentials, playlist URLs containing credentials, or API secrets to the source or GitHub issues. Use the private in-app setup for credentials. Your actual provider and physical Steam Deck/TV playback have not yet been verified.
 
@@ -94,10 +111,10 @@ npm run desktop
 
 For the browser version, run `npm run dev -- --host 127.0.0.1`. For a Linux download, run `npm run package:linux`. Built packages appear in `release/`. See [preview security scope](SECURITY.md) before using the browser development entry.
 
-`design/tv-preview.html` preserves the approved visual study. `scripts/build-preview.mjs` produces its TV application and bundles the local IPTV service. `desktop/` provides the sandboxed Electron shell. `app/` retains the React/Vinext entry point for the full dashboard implementation. The Linux workflow checks the browser build and packages the desktop preview.
+`design/tv-preview.html` preserves the approved visual study. `scripts/build-preview.mjs` produces its TV application and bundles the local NFL data and IPTV services. `desktop/` provides the sandboxed Electron shell. `app/` retains the React/Vinext entry point for the full dashboard implementation. The Linux workflow checks the browser build and packages the desktop preview.
 
 ## Artwork and dependencies
 
-The penguin/football emblem and stadium backdrop are original generated artwork. The backdrop is not a photograph of a live game. The logo was created with the built-in image generator; its [prompt](design/logo-prompt.txt) is included for provenance. Field diagrams use simulated data. Fonts are distributed under the licenses included with their packages. Icons come from Lucide. Video playback uses [hls.js](https://github.com/video-dev/hls.js) and [mpegts.js](https://github.com/xqq/mpegts.js); XMLTV parsing uses [saxes](https://github.com/lddubeau/saxes). Their licenses are included in the package. Third-party dependencies retain their respective licenses. This is an independent fan project, not an official NFL or Yahoo product.
+The penguin/football emblem and stadium backdrop are original generated artwork. The backdrop is not a photograph of a live game. The logo was created with the built-in image generator; its [prompt](design/logo-prompt.txt) is included for provenance. Field diagrams use reported NFL positions; they are schematic views, not player-tracking data. Fonts are distributed under the licenses included with their packages. Icons come from Lucide. Video playback uses [hls.js](https://github.com/video-dev/hls.js) and [mpegts.js](https://github.com/xqq/mpegts.js); XMLTV parsing uses [saxes](https://github.com/lddubeau/saxes). Their licenses are included in the package. Third-party dependencies retain their respective licenses. This is an independent fan project, not an official NFL or Yahoo product.
 
 The source is published for inspection and download. An open-source license for the project has not been selected; third-party licenses still apply.

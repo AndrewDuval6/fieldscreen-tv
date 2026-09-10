@@ -1,0 +1,77 @@
+/* TV-native data panels share the approved field and broadcast shell. */
+#fieldscreen-concept.fs-nfl-connected{--fs-line:#66977d55;--fs-panel:#102c23;--fs-soft:#b0cabc;--fs-pop:#b9ed91}
+#fieldscreen-concept.fs-nfl-connected #ez-scores{display:none}
+#fieldscreen-concept.fs-nfl-connected .ez-top{gap:calc(var(--ez-u)*12)}
+#fieldscreen-concept.fs-nfl-connected .ez-brand{font-size:calc(var(--ez-u)*36)}
+#fieldscreen-concept.fs-nfl-connected .ez-tv-switch{margin-right:0;gap:calc(var(--ez-u)*6)}
+#fieldscreen-concept.fs-nfl-connected .ez-tv-switch button{font-size:calc(var(--ez-u)*21);padding:calc(var(--ez-u)*12)}
+#fieldscreen-concept.fs-nfl-connected .ez-tv-switch .fs-extra-tabs{display:contents}
+#fieldscreen-concept.fs-nfl-connected #fs-nfl-source{display:none}
+#fieldscreen-concept.fs-nfl-connected .ez-top #ez-intro{display:none}
+#fieldscreen-concept.fs-nfl-connected #ez-dir-matchup{display:block}
+#fieldscreen-concept .fs-nfl-matchup{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:calc(var(--ez-u)*16);text-align:center;margin:calc(var(--ez-u)*8) 0}
+.fs-nfl-matchup>div{min-width:0;border-top:calc(var(--ez-u)*4) solid var(--club);padding-top:calc(var(--ez-u)*8)}
+#fieldscreen-concept .fs-nfl-matchup b{font:800 calc(var(--ez-u)*62)/1 'Barlow Condensed';letter-spacing:.04em;color:#eff9e9;text-shadow:0 2px 18px var(--club)}
+.fs-nfl-matchup>div>span{display:block;font:500 calc(var(--ez-u)*22)/1.2 Inter;color:#d3e6d6;margin-top:calc(var(--ez-u)*5)}
+#fieldscreen-concept .fs-nfl-matchup>strong{font:700 calc(var(--ez-u)*90)/1 'Barlow Condensed';font-variant-numeric:tabular-nums;white-space:nowrap;color:#f1faeb}
+.fs-nfl-matchup i{font:400 .35em 'IBM Plex Mono';color:#8baea1;padding:0 .3em;vertical-align:middle}
+#fieldscreen-concept .fs-nfl-controls{display:flex;gap:calc(var(--ez-u)*16);align-items:center;flex:0 0 auto;min-width:0}
+#fieldscreen-concept .fs-nfl-controls h2{font:700 calc(var(--ez-u)*42)/1.1 'Barlow Condensed';letter-spacing:.04em;margin:0 auto 0 0}
+#fieldscreen-concept .fs-nfl-controls h3{margin-right:auto}
+.fs-nfl-controls>span{font:400 calc(var(--ez-u)*18)/1.3 'IBM Plex Mono';color:var(--fs-soft);margin-left:auto}
+.fs-nfl-controls label{display:flex;align-items:center;gap:calc(var(--ez-u)*10);font:500 calc(var(--ez-u)*20) Inter;color:var(--fs-soft)}
+#fieldscreen-concept .fs-nfl-controls select{font:500 calc(var(--ez-u)*24) Inter;color:#ecf5e9;background:#133828;border:1px solid var(--fs-line);padding:calc(var(--ez-u)*12);border-radius:5px;max-width:calc(var(--ez-u)*490)}
+#fieldscreen-concept .fs-nfl-connected{font-family:Inter}
+#fieldscreen-concept .fs-nfl-controls .ez-button,#fieldscreen-concept .fs-nfl-card .ez-button,#fieldscreen-concept .fs-schedule-game .ez-button,#fieldscreen-concept #ez-dir-moments .ez-button,#fieldscreen-concept .fs-watch-scorecard .ez-button{font:500 calc(var(--ez-u)*22) Inter;padding:calc(var(--ez-u)*10) calc(var(--ez-u)*16);min-height:calc(var(--ez-u)*44);background:#1d4330;color:#e1f3dc;border:1px solid #61906588;white-space:nowrap}
+#fieldscreen-concept .fs-nfl-controls button[aria-pressed=true],#fieldscreen-concept .fs-stats-tabs button[aria-pressed=true]{color:#122a20;background:var(--fs-pop);border-color:var(--fs-pop)}
+#fieldscreen-concept .fs-nfl-scroll{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-color:#6a986d #10251d;scrollbar-width:thin;padding:calc(var(--ez-u)*4);scroll-padding:calc(var(--ez-u)*12)}
+.fs-schedule-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:calc(var(--ez-u)*18)}
+#fieldscreen-concept .fs-schedule-game,#fieldscreen-concept .fs-nfl-card{border:1px solid var(--fs-line);border-radius:calc(var(--ez-u)*8);background:linear-gradient(150deg,#214634dd,#102b24f2 60%,#122c30f0);padding:calc(var(--ez-u)*24);min-width:0;box-shadow:inset 0 1px #ccf6be0d,0 5px 24px #05170c55;color:#ecf5e9}
+.fs-schedule-game .fs-nfl-matchup b{font-size:calc(var(--ez-u)*43)!important}.fs-schedule-game .fs-nfl-matchup>strong{font-size:calc(var(--ez-u)*65)!important}.fs-schedule-game .fs-nfl-matchup>div>span{font-size:calc(var(--ez-u)*20)}
+.fs-schedule-game>p{font:500 calc(var(--ez-u)*24) 'Barlow Condensed';margin:calc(var(--ez-u)*12) 0;color:#e5efdb;letter-spacing:.02em}.fs-schedule-game>small{font:400 calc(var(--ez-u)*18) Inter;color:var(--fs-soft)}
+.fs-schedule-game>div:last-child{display:flex;gap:calc(var(--ez-u)*10);margin-top:calc(var(--ez-u)*18)}
+.fs-game-kicker{display:flex;justify-content:space-between;gap:calc(var(--ez-u)*12);font:500 calc(var(--ez-u)*19) 'IBM Plex Mono';color:var(--fs-pop)}
+.fs-standings-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:calc(var(--ez-u)*20)}
+#fieldscreen-concept .fs-nfl-card h3{font:600 calc(var(--ez-u)*30)/1.2 'Barlow Condensed';letter-spacing:.08em;margin:0 0 calc(var(--ez-u)*14);color:var(--fs-pop)}
+#fieldscreen-concept .fs-nfl-card table{border-collapse:collapse;width:100%;font:400 calc(var(--ez-u)*23)/1.35 Inter;text-align:right;font-variant-numeric:tabular-nums}
+.fs-nfl-card th{font:500 calc(var(--ez-u)*18) 'IBM Plex Mono';color:#95b8a4;border-bottom:1px solid var(--fs-line);padding:calc(var(--ez-u)*13) calc(var(--ez-u)*8)}
+.fs-nfl-card td{border-bottom:1px solid #6f9e7626;padding:calc(var(--ez-u)*15) calc(var(--ez-u)*8)}
+.fs-nfl-card td:first-child,.fs-nfl-card th:first-child{text-align:left}.fs-nfl-card tr:last-child td{border-bottom:0}
+.fs-nfl-card td button{font:inherit;background:transparent;color:inherit;border:0;padding:calc(var(--ez-u)*3);text-align:left;cursor:pointer}.fs-nfl-card td button:hover{color:var(--fs-pop)}
+.fs-detail-grid{display:grid;grid-template-columns:1.15fr 1fr;align-content:start;align-items:start;gap:calc(var(--ez-u)*20)}
+.fs-detail-feature>p{text-align:center;font:500 calc(var(--ez-u)*24) 'IBM Plex Mono';color:var(--fs-soft)}
+.fs-detail-pitch{margin:calc(var(--ez-u)*16) 0;aspect-ratio:2.25}.fs-detail-pitch .ez-pitch{height:100%;width:100%}
+#fieldscreen-concept .fs-nfl-card h4{font:500 calc(var(--ez-u)*23) 'Barlow Condensed';letter-spacing:.03em;color:#b7dca9;margin:calc(var(--ez-u)*22) 0 calc(var(--ez-u)*6)}
+.fs-detail-plays>.fs-nfl-controls{margin-bottom:calc(var(--ez-u)*16)}
+.fs-real-play{display:grid;grid-template-columns:calc(var(--ez-u)*65) 1fr auto;gap:calc(var(--ez-u)*15);align-items:start;border-top:1px solid #60987333;padding:calc(var(--ez-u)*15) 0;font:400 calc(var(--ez-u)*22)/1.45 Inter}
+.fs-real-play>span{font:400 calc(var(--ez-u)*17) 'IBM Plex Mono';color:#a4bdb2}.fs-real-play b{display:block;margin-top:calc(var(--ez-u)*7)}.fs-real-play p{margin:0}.fs-real-play>strong{color:var(--fs-pop);font:500 calc(var(--ez-u)*18) 'IBM Plex Mono';white-space:nowrap}
+.fs-team-grid{display:grid;grid-template-columns:1.25fr 1fr;align-items:start;gap:calc(var(--ez-u)*20)}
+.fs-team-identity{display:flex;gap:calc(var(--ez-u)*24);align-items:center;border-bottom:1px solid var(--fs-line);padding-bottom:calc(var(--ez-u)*22);margin-bottom:calc(var(--ez-u)*18)}
+.fs-team-identity>span{font:800 calc(var(--ez-u)*76) 'Barlow Condensed';background:var(--club);border:1px solid #ffffff66;border-radius:calc(var(--ez-u)*6);padding:calc(var(--ez-u)*12);min-width:calc(var(--ez-u)*150);text-align:center;color:#fff;text-shadow:0 2px 8px #000}
+#fieldscreen-concept .fs-team-identity h2{font:700 calc(var(--ez-u)*40) 'Barlow Condensed';margin:0}.fs-team-identity p{font:400 calc(var(--ez-u)*18) 'IBM Plex Mono';color:#afc2b8;margin:calc(var(--ez-u)*8) 0 0}
+.fs-stats-tabs{display:flex;flex-wrap:wrap;gap:calc(var(--ez-u)*8);margin-bottom:calc(var(--ez-u)*16)}
+.fs-advanced-grid{display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--ez-u)*14);margin:calc(var(--ez-u)*24) 0}.fs-advanced-grid>div{padding:calc(var(--ez-u)*18);background:#0b261eaa;border:1px solid #6b967335;border-radius:calc(var(--ez-u)*5)}.fs-advanced-grid span{font:400 calc(var(--ez-u)*20) Inter;color:var(--fs-soft)}.fs-advanced-grid strong{display:block;font:600 calc(var(--ez-u)*50) 'Barlow Condensed';margin-top:calc(var(--ez-u)*4);color:#d6f0b8}
+#fieldscreen-concept .fs-nfl-muted{font:400 calc(var(--ez-u)*21)/1.6 Inter;color:var(--fs-soft);margin:calc(var(--ez-u)*14) 0}.fs-data-credit{font:400 calc(var(--ez-u)*17)/1.6 'IBM Plex Mono';color:#87ae9a;border-top:1px solid var(--fs-line);padding-top:calc(var(--ez-u)*18)}
+.fs-nfl-empty{grid-column:1/-1;flex:1;min-height:calc(var(--ez-u)*280);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--ez-u)*16);text-align:center;background:radial-gradient(ellipse at 50% 45%,#35624488,#0a221900 65%)}
+.fs-nfl-empty img{width:calc(var(--ez-u)*190);height:calc(var(--ez-u)*190);object-fit:contain}.fs-nfl-empty strong{font:600 calc(var(--ez-u)*40) 'Barlow Condensed';letter-spacing:.1em}.fs-nfl-empty p{font:400 calc(var(--ez-u)*24) Inter;color:var(--fs-soft);margin:0;max-width:80%}.fs-data-warning{color:#ffcb9c!important}
+#fieldscreen-concept #ez-dir-moments{display:flex;gap:calc(var(--ez-u)*12);align-items:center}
+#fieldscreen-concept #ez-dir-step{display:flex;gap:calc(var(--ez-u)*14);align-items:center;white-space:nowrap;font-size:calc(var(--ez-u)*20);margin-left:auto}
+#fieldscreen-concept [data-field-page]{background:#264833;border:1px solid #759b7355;border-radius:4px;color:#c9efac;font:500 calc(var(--ez-u)*23) Inter;padding:calc(var(--ez-u)*4) calc(var(--ez-u)*13);cursor:pointer}
+#fieldscreen-concept .fs-nfl-feed{display:flex;flex-direction:column;overflow:hidden}
+.fs-watch-scorecard{flex:1;min-height:0;display:flex;flex-direction:column;align-items:stretch;gap:calc(var(--ez-u)*5);padding:calc(var(--ez-u)*12) calc(var(--ez-u)*26);text-align:center;background:radial-gradient(ellipse at 30% 0,#1b453955,transparent 70%)}
+#fieldscreen-concept .fs-watch-scorecard .fs-nfl-matchup b{font-size:calc(var(--ez-u)*44)}
+#fieldscreen-concept .fs-watch-scorecard .fs-nfl-matchup>strong{font-size:calc(var(--ez-u)*62)}
+.fs-watch-scorecard>span{font:500 calc(var(--ez-u)*20) 'IBM Plex Mono';color:#bed6c4}.fs-watch-scorecard>div:not(.fs-nfl-matchup){flex:1;min-height:0}.fs-watch-scorecard .ez-pitch{width:100%;height:100%}.fs-watch-scorecard>.ez-button{align-self:center;margin-top:calc(var(--ez-u)*6)}
+.fs-watch-data{flex:1;min-height:0;overflow:auto;padding:calc(var(--ez-u)*18);scrollbar-width:thin;scrollbar-color:#7a9e74 #10251d}
+.fs-watch-data h3{font:600 calc(var(--ez-u)*30) 'Barlow Condensed';margin:0 0 calc(var(--ez-u)*12);color:var(--fs-pop)}
+.fs-watch-data>div,.fs-watch-data>button{display:flex;align-items:center;justify-content:space-between;gap:calc(var(--ez-u)*15);width:100%;padding:calc(var(--ez-u)*12);border:0;border-bottom:1px solid #65987444;background:#112c21;color:#e9f3e6;font:500 calc(var(--ez-u)*24) Inter;text-align:left}
+.fs-watch-data>button{cursor:pointer}.fs-watch-data>button:hover{background:#254a30}.fs-watch-data small{display:block;font:400 calc(var(--ez-u)*17) Inter;color:#a2bfa9;margin-top:calc(var(--ez-u)*5)}.fs-watch-data>p{font:600 calc(var(--ez-u)*22) 'Barlow Condensed';color:var(--fs-pop);margin:calc(var(--ez-u)*18) 0 calc(var(--ez-u)*6)}.fs-watch-data b{white-space:nowrap}
+#fieldscreen-concept .ez-layout-focus .fs-watch-scorecard>div:not(.fs-nfl-matchup),#fieldscreen-concept .ez-layout-focus .fs-watch-scorecard>.ez-button{display:none}
+#fieldscreen-concept .ez-layout-focus .ez-feed:first-child .fs-watch-scorecard>div:not(.fs-nfl-matchup){display:block}
+#fieldscreen-concept .ez-layout-focus .ez-feed:first-child .fs-watch-scorecard>.ez-button{display:block}
+#fieldscreen-concept .ez-layout-focus .ez-feed:not(:first-child) .fs-watch-scorecard .fs-nfl-matchup b{font-size:calc(var(--ez-u)*32)}
+#fieldscreen-concept .ez-layout-focus .ez-feed:not(:first-child) .fs-watch-scorecard .fs-nfl-matchup>strong{font-size:calc(var(--ez-u)*42)}
+#fieldscreen-concept .ez-layout-focus .ez-feed:not(:first-child) .fs-nfl-matchup>div>span{display:none}
+#fieldscreen-concept .ez-layout-single .fs-nfl-feed:nth-child(n+2),#fieldscreen-concept .ez-layout-split .fs-nfl-feed:nth-child(n+3){display:none}
+.fs-guide-match{display:flex;align-items:center;justify-content:space-between;gap:1em;padding:.7em 1em;margin-bottom:.7em;background:#38573366;border:1px solid #a2d08066;border-radius:6px;font-size:.75em;color:#d5eabe}.fs-guide-match strong{display:block;font-size:1.15em;margin-bottom:.3em}.fs-channel-copy .fs-match-confidence{color:#c5ec99}
+#fieldscreen-concept .fs-nfl-scroll:focus-visible,#fieldscreen-concept .fs-watch-data:focus-visible{outline:2px solid var(--fs-pop);outline-offset:-2px}

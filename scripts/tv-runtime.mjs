@@ -4,7 +4,7 @@ const root = document.getElementById('fieldscreen-concept');
 const api = root.fieldscreenConcept;
 const q = selector => root.querySelector(selector);
 const supported = ['single', 'split', 'quad', 'focus'];
-let lastInput = {}, controllerIndex = null, activeControl = null;
+let lastInput = {}, controllerIndex = null, activeControl = null, lastFrame = 0;
 
 function visibleControls() {
   const dialog = !q('#fs-iptv-modal').hidden ? q('#fs-iptv-modal') : !q('#ez-launch').hidden ? q('#ez-launch') : !q('#ez-overlay').hidden ? q('#ez-overlay') : root;
@@ -15,7 +15,7 @@ function visibleControls() {
 }
 function focus(element) {
   root.querySelectorAll('.ez-controller-focus').forEach(el => el.classList.remove('ez-controller-focus'));
-  if (element) { activeControl = element; element.classList.add('ez-controller-focus'); element.focus({ preventScroll: true }); if (element.closest('#fs-iptv-modal')) element.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
+  if (element) { activeControl = element; element.classList.add('ez-controller-focus'); element.focus({ preventScroll: true }); if (element.closest('#fs-iptv-modal,.fs-nfl-scroll,.fs-watch-data')) element.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
 }
 function move(direction) {
   const controls = visibleControls();
@@ -27,7 +27,7 @@ function cycleSource(select, amount) {
   select.selectedIndex = (select.selectedIndex + amount + select.options.length) % select.options.length;
   const pane = select.dataset.screen;
   select.dispatchEvent(new Event('change', { bubbles: true }));
-  focus(pane === undefined ? select : q('[data-screen="' + pane + '"]'));
+  focus(pane === undefined ? (select.id ? q('#' + CSS.escape(select.id)) : select) : q('[data-screen="' + pane + '"]'));
 }
 function action(name) {
   if (!q('#fs-iptv-modal').hidden && name === 'back') { root.fieldscreenIptv.close(); return; }
@@ -54,7 +54,7 @@ function action(name) {
     else (current?.closest('.ez-feed')?.querySelector('[data-audio]') ?? q('[data-audio]'))?.click();
   } else if (name === 'layout') {
     if (root.classList.contains('ez-director')) q('#ez-dir-auto').click();
-    else q('[data-layout="' + supported[(supported.indexOf(api.state.layout) + 1) % supported.length] + '"]').click();
+    else q('[data-layout="' + supported[(supported.indexOf(api.state.layout) + 1) % supported.length] + '"]')?.click();
   } else if (name === 'demo' && root.classList.contains('ez-director')) q('#ez-dir-play').click();
 }
 function poll(now) {
@@ -65,11 +65,16 @@ function poll(now) {
     root.classList.add('ez-controller-connected');
     const input = gamepadActions(pad, lastInput, now); lastInput = input.state;
     input.actions.forEach(action);
-    if (activeControl && !activeControl.isConnected) focus(visibleControls()[0]);
+    const scrollAxis = pad.axes?.[3] || 0;
+    if (Math.abs(scrollAxis) > .25) {
+      const scroller = !q('#fs-iptv-modal').hidden ? q('#fs-channel-list') : document.activeElement?.closest('.fs-nfl-scroll,.fs-watch-data') || q('.fs-nfl-scroll') || q('.fs-watch-data');
+      if (scroller) scroller.scrollTop += scrollAxis * Math.min(40, now - lastFrame) * root.clientWidth / 1920;
+    }
+    if (activeControl && !activeControl.isConnected) focus(visibleControls().includes(document.activeElement) ? document.activeElement : visibleControls()[0]);
   } else {
     controllerIndex = null; lastInput = {}; root.classList.remove('ez-controller-connected');
   }
-  requestAnimationFrame(poll);
+  lastFrame = now; requestAnimationFrame(poll);
 }
 root.addEventListener('keydown', event => {
   if (!q('#ez-launch').hidden || !q('#ez-overlay').hidden) return;
@@ -85,7 +90,7 @@ if (window.fieldscreenDesktop) {
   exit.addEventListener('click', () => window.fieldscreenDesktop.quit()); q('.ez-top').append(exit);
 }
 const hint = document.createElement('span'); hint.className = 'ez-controller-hint';
-hint.textContent = 'A SELECT · X AUDIO / PIN · Y LAYOUT / AUTO · LB/RB VIEW';
+hint.textContent = 'A SELECT · X AUDIO / PIN · Y LAYOUT / AUTO · LB/RB VIEW · R STICK SCROLL';
 q('.ez-bottom').append(hint);
 api.state.tv = true; api.render();
 q('#ez-intro').click();
