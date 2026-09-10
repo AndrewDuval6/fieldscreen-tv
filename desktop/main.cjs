@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain, Menu, powerSaveBlocker, safeStorage } = require('electron');
 const path = require('node:path');
 const { startLocalServer } = require('./iptv.cjs');
-const { createVault } = require('./vault.cjs');
+const { createVault, configurePasswordStore } = require('./vault.cjs');
 
 let window;
 let wakeLock;
@@ -12,6 +12,7 @@ const startFullscreen = !smokeTest && !process.argv.includes('--windowed');
 const directory = path.join(__dirname, '..', 'public', 'preview');
 
 app.setName('FieldScreen TV');
+configurePasswordStore(app.commandLine);
 app.enableSandbox();
 if (!app.requestSingleInstanceLock()) app.quit();
 else {

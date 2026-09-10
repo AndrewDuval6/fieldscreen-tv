@@ -8,7 +8,7 @@
 
 A television-first NFL control room for game day. Field positions, a featured game, and configurable video/data panes in one 16:9 screen.
 
-**Development preview · v0.1.0-preview.5.** ESPN scores, schedules, all 32 teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. IPTV playback and XMLTV guide matching are included. Wireless casting is still planned.
+**Development preview · v0.1.0-preview.6.** ESPN scores, schedules, all 32 teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. IPTV playback and XMLTV guide matching are included. Wireless casting is still planned.
 
 ## Steam Deck is the TV console
 
@@ -20,9 +20,9 @@ The intended setup is Steam Deck connected to the TV, an Xbox controller, and a 
 
 Linux preview builds are packaged as an **x64 AppImage**, plus a portable `.tar.gz` alternative. They bundle the runtime, fonts, icons, and preview artwork; Node.js and a development server are not needed to run a packaged download.
 
-[**Download the Linux preview**](https://github.com/AndrewDuval6/fieldscreen-tv/releases/tag/v0.1.0-preview.5)
+[**Download the Linux preview**](https://github.com/AndrewDuval6/fieldscreen-tv/releases/tag/v0.1.0-preview.6)
 
-Choose `FieldScreen-TV-0.1.0-preview.5-Linux-x86_64.AppImage`, or the portable `.tar.gz` alternative.
+Choose `FieldScreen-TV-0.1.0-preview.6-Linux-x86_64.AppImage`, or the portable `.tar.gz` alternative.
 
 To launch on Steam Deck:
 
@@ -79,7 +79,7 @@ The guide joins XMLTV programme channel IDs to the playlist's `tvg-id` (or Xtrea
 
 **All channels** searches the entire lineup and the next 48 hours of guide listings. **Ctrl+F** focuses this search. Lineups of up to 500 channels appear in one scrollable list; larger lineups are filtered before pagination. **Update TV guide** lets you replace only the guide link while keeping channels connected. Guide refresh runs every 15 minutes and after channel refresh. Download failures keep the last available listings, report the reason, and honor a retry delay.
 
-M3U/XMLTV files can contain account credentials. Enter them only in the app. They are held in the local service for the current session. The packaged Linux app can optionally remember a provider using an available OS keyring; it refuses insecure plaintext fallback. Browser development sessions do not save provider credentials. **Disconnect & forget** stops playback and removes the saved provider. The app does not send account information to GitHub or an app-operated service; it contacts the provider and the stream/guide servers supplied by that provider.
+M3U/XMLTV files can contain account credentials. Enter them only in the app. They are held in the local service for the current session. The packaged Linux app checks encrypted saving and reading on each device before enabling **Remember this provider**. Both the playlist and guide are saved together using the OS keyring, and a saved provider reconnects when the app opens. **Check again** retries after unlocking your desktop keyring or wallet. **Remember provider** also saves an already connected session without re-entering links. Plaintext fallback is refused. Browser development sessions do not save provider credentials. **Disconnect & forget** stops playback and removes the saved provider. The app does not send account information to GitHub or an app-operated service; it contacts the provider and the stream/guide servers supplied by that provider.
 
 Standard HTTP HLS and MPEG-TS playback are included, plus browser-compatible MP4/WebM links. Video/audio codecs must be supported by the bundled browser; H.264/AAC is the most broadly compatible combination. DRM-protected streams, UDP/RTSP, proprietary headers, and provider-specific authentication beyond the supplied URL/login are not implemented. A public **Try sample video** option checks a Mux-hosted Big Buck Bunny stream; it is not an NFL broadcast.
 

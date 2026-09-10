@@ -138,7 +138,12 @@ function createIPTV({ vault } = {}) {
     }
     return PREFIX + 'stream/' + id;
   }
-  async function status() { return { connected: Boolean(metadata), ...metadata, ...guideState, channels, canRemember: Boolean(vault?.available()), saved: Boolean(await vault?.exists()) }; }
+  async function status(forceStorage = false) {
+    const storage = vault?.verify ? await vault.verify(forceStorage) : { state: vault?.available() ? 'ready' : 'unsupported', message: 'Provider saving is available in the installed desktop app. This browser session keeps your connection only until it closes.' };
+    const saved = Boolean(await vault?.load());
+    const savedUnreadable = !saved && Boolean(await vault?.hasFile?.());
+    return { connected: Boolean(metadata), ...metadata, ...guideState, channels, canRemember: storage.state === 'ready', saved, storage: { ...storage, savedUnreadable } };
+  }
   async function connect(config, refreshing = false) {
     if (connecting) throw new PublicError('A provider connection is already in progress.');
     connecting = true;
@@ -322,6 +327,16 @@ function createIPTV({ vault } = {}) {
       try { config = JSON.parse(Buffer.concat(chunks).toString() || '{}'); } catch { return json(res, 400, { error: 'Invalid request.' }); }
       if (!config || typeof config !== 'object' || Array.isArray(config)) return json(res, 400, { error: 'Invalid request.' });
       if (route === PREFIX + 'connect') return json(res, 200, await connect(config));
+      if (route === PREFIX + 'check-storage') return json(res, 200, await status(true));
+      if (route === PREFIX + 'remember') {
+        if (!activeConfig || metadata?.demo) throw new PublicError('Connect your provider before saving it.');
+        if (connecting) throw new PublicError('Wait for the channel refresh to finish, then try again.');
+        if (!vault || (await status(true)).canRemember !== true) throw new PublicError('Secure storage is unavailable. Check storage in Provider settings, then try again.');
+        try { await vault.save({ ...activeConfig, remember: true }); }
+        catch { throw new PublicError('Your provider is connected, but could not be saved. Check storage in Provider settings, then try again.'); }
+        activeConfig.remember = true;
+        return json(res, 200, { ...await status(), storageNote: 'Provider saved securely on this device. It will reconnect when you open the app.' });
+      }
       if (route === PREFIX + 'refresh-channels') return json(res, 200, await refreshChannels(config));
       if (route === PREFIX + 'guide') return json(res, 200, await loadGuide(Boolean(config.force)));
       if (route === PREFIX + 'update-guide') return json(res, 200, await updateGuide(config));

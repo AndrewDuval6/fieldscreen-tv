@@ -22,9 +22,14 @@ const modal = document.createElement('section'); modal.id = 'fs-iptv-modal'; mod
 modal.innerHTML = `<div class="fs-iptv-panel"><header class="fs-iptv-heading"><div><span class="fs-eyebrow">FIELDSCREEN / YOUR COVERAGE</span><h2 id="fs-iptv-title">Connect your provider</h2></div><button class="ez-button" id="fs-iptv-close">Close · B</button></header>
 <div id="fs-provider-view"><div class="fs-provider-intro"><img src="./fieldscreen-mark.png" alt=""><div><h3>Your channels. Your watch wall.</h3><p>Add a provider to watch games and browse its TV guide.</p></div></div>
 <div class="fs-provider-tabs"><button class="ez-button on" data-provider-type="xtream" aria-pressed="true">Xtream login</button><button class="ez-button" data-provider-type="m3u" aria-pressed="false">M3U playlist</button><button class="ez-button" id="fs-resume" hidden>Use saved provider</button></div>
-<form id="fs-provider-form" autocomplete="off"><div class="fs-form-grid"><label class="fs-wide">Provider address<input id="fs-provider-url" type="password" placeholder="https://your-provider.example:8080" autocomplete="off" required></label><label data-xtream>Username<input id="fs-provider-user" autocomplete="off" spellcheck="false"></label><label data-xtream>Password<input id="fs-provider-password" type="password" autocomplete="new-password"></label><label data-m3u hidden class="fs-wide">Or choose a playlist file<input id="fs-provider-file" type="file" accept=".m3u,.m3u8,text/plain,audio/x-mpegurl"></label><label class="fs-wide">TV guide URL <span>Optional · found automatically when supplied</span><input id="fs-guide-url" type="password" placeholder="https://your-provider.example/guide.xml" autocomplete="off"></label></div>
-<label class="fs-remember"><input id="fs-remember" type="checkbox">Remember this provider on this device</label><p id="fs-storage-note" class="fs-muted">Credentials stay on this device for this session.</p><div class="fs-form-actions"><button class="ez-button ez-primary" type="submit" id="fs-connect">Connect provider</button><button class="ez-button" type="button" id="fs-demo">Try sample video</button><button class="ez-button" type="button" id="fs-back-library" hidden>Back to channels</button></div></form></div>
+<form id="fs-provider-form" autocomplete="off"><div class="fs-form-grid">
+<label class="fs-wide"><strong id="fs-provider-url-label">Provider address</strong><input id="fs-provider-url" type="password" placeholder="https://your-provider.example:8080" autocomplete="off" required></label>
+<label data-xtream>Username<input id="fs-provider-user" autocomplete="off" spellcheck="false"></label><label data-xtream>Password<input id="fs-provider-password" type="password" autocomplete="new-password"></label>
+<label class="fs-wide">EPG / TV guide link <span>Optional · paste your provider’s XMLTV link to find games automatically</span><input id="fs-guide-url" type="password" placeholder="Paste your EPG / XMLTV link" autocomplete="off"></label>
+<label data-m3u hidden class="fs-wide">Or choose a playlist file<input id="fs-provider-file" type="file" accept=".m3u,.m3u8,text/plain,audio/x-mpegurl"></label></div>
+<label class="fs-remember"><input id="fs-remember" type="checkbox" disabled aria-describedby="fs-storage-note">Remember this provider on this device</label><div class="fs-storage-check"><p id="fs-storage-note" class="fs-muted" role="status">Checking secure storage on this device…</p><button class="ez-button" type="button" id="fs-storage-recheck">Check again</button></div><div class="fs-form-actions"><button class="ez-button ez-primary" type="submit" id="fs-connect">Connect provider</button><button class="ez-button" type="button" id="fs-demo">Try sample video</button><button class="ez-button" type="button" id="fs-back-library" hidden>Back to channels</button></div></form></div>
 <div id="fs-library-view" hidden><div class="fs-library-meta"><div class="fs-provider-status"><span id="fs-provider-label"></span><small id="fs-channels-updated"></small></div><div class="fs-library-actions"><button class="ez-button" id="fs-channels-refresh">Refresh channels</button><button class="ez-button" id="fs-guide-refresh">Refresh guide</button><button class="ez-button" id="fs-provider-edit">Provider settings</button><button class="ez-button" id="fs-disconnect">Disconnect & forget</button></div></div><input id="fs-refresh-file" type="file" accept=".m3u,.m3u8,text/plain,audio/x-mpegurl" aria-label="Updated M3U playlist" hidden>
+<div class="fs-storage-check"><span id="fs-saved-state" class="fs-muted" role="status"></span><button class="ez-button" id="fs-remember-connected">Remember provider</button></div>
 <div class="fs-targets" aria-label="Choose a destination screen">${[0,1,2,3].map(i => `<button class="fs-target" data-iptv-target="${i}" aria-pressed="${i === 0}"><small>SCREEN 0${i + 1}</small><strong id="fs-target-${i}">Choose a channel</strong></button>`).join('')}</div>
 <div class="fs-library-tabs"><button class="ez-button" data-library-mode="games">Your games</button><button class="ez-button" data-library-mode="channels">All channels</button><span id="fs-guide-health" role="status"></span></div>
 <div id="fs-auto-games" class="fs-auto-games"></div>
@@ -67,6 +72,7 @@ function type(next) {
   modal.querySelectorAll('[data-provider-type]').forEach(b => { b.classList.toggle('on', b.dataset.providerType === next); b.setAttribute('aria-pressed', b.dataset.providerType === next); });
   modal.querySelectorAll('[data-xtream]').forEach(el => { el.hidden = next !== 'xtream'; });
   modal.querySelectorAll('[data-m3u]').forEach(el => { el.hidden = next !== 'm3u'; });
+  q('#fs-provider-url-label').textContent = next === 'm3u' ? 'M3U playlist link' : 'Provider address';
   q('#fs-provider-url').placeholder = next === 'xtream' ? 'https://your-provider.example:8080' : 'Paste your private M3U playlist URL';
   q('#fs-provider-url').required = true; q('#fs-provider-user').required = next === 'xtream'; q('#fs-provider-password').required = next === 'xtream';
 }
@@ -77,8 +83,7 @@ function updateConnection(value) {
   const selectedGroup = q('#fs-channel-group').value;
   connection = value; openButton.textContent = value.connected ? 'TV guide · IPTV' : 'Connect IPTV';
   q('#fs-resume').hidden = !value.saved; q('#fs-back-library').hidden = !value.connected;
-  q('#fs-remember').disabled = !value.canRemember;
-  q('#fs-storage-note').textContent = value.canRemember ? 'Remembering uses your system keyring. Disconnect & forget removes the saved provider.' : 'Session only. The Linux app can remember logins when a system keyring is available.';
+  renderStorage();
   const groups = [...new Set(value.channels.map(c => c.group))].sort();
   q('#fs-channel-group').innerHTML = '<option value="">All groups</option>' + groups.map(g => `<option>${escape(g)}</option>`).join('');
   if (groups.includes(selectedGroup)) q('#fs-channel-group').value = selectedGroup;
@@ -86,6 +91,30 @@ function updateConnection(value) {
   api.state.slots = api.state.slots.map((slot, i) => typeof slot === 'string' && slot.startsWith('iptv:') && !channelFor(i) ? 'dashboard' : slot);
   api.render(); sync();
 }
+function renderStorage() {
+  q('#fs-remember').disabled = !connection.canRemember;
+  if (!connection.canRemember) q('#fs-remember').checked = false;
+  const warning = connection.storage?.savedUnreadable ? ' Your saved provider could not be unlocked. Check again after unlocking your keyring, or enter your provider again.' : '';
+  q('#fs-storage-note').textContent = (connection.storage?.message || (connection.canRemember ? 'Secure storage available on this device.' : 'Session only. Install the desktop app to save a provider securely.')) + warning;
+  q('#fs-storage-recheck').hidden = connection.storage?.state === 'unsupported';
+  q('#fs-saved-state').textContent = connection.saved ? 'Saved on this device · reconnects when the app opens' : 'Session only · provider is not saved';
+  q('#fs-remember-connected').hidden = !connection.connected || connection.demo || connection.saved;
+  q('#fs-remember-connected').textContent = connection.canRemember ? 'Remember provider' : 'Check storage';
+}
+q('#fs-storage-recheck').addEventListener('click', async () => {
+  const button = q('#fs-storage-recheck'); button.disabled = true;
+  q('#fs-storage-note').textContent = 'Testing encrypted saving and reading on this device…';
+  try { Object.assign(connection, await request('check-storage', {})); renderStorage(); q('#fs-resume').hidden = !connection.saved; }
+  catch (error) { q('#fs-storage-note').textContent = error.message; }
+  finally { button.disabled = false; }
+});
+q('#fs-remember-connected').addEventListener('click', async () => {
+  if (!connection.canRemember) { setView('setup'); q('#fs-storage-recheck').focus(); return; }
+  const button = q('#fs-remember-connected'); button.disabled = true;
+  try { Object.assign(connection, await request('remember', {})); renderStorage(); message(connection.storageNote); }
+  catch (error) { message(error.message, true); }
+  finally { button.disabled = false; }
+});
 async function connect(config, route = 'connect') {
   q('#fs-connect').disabled = true; q('#fs-demo').disabled = true; q('#fs-resume').disabled = true;
   message('Connecting your provider and loading channels…', false, true);
@@ -329,4 +358,8 @@ window.addEventListener('focus', async () => {
 setInterval(() => { if (connection.connected && !modal.hidden && view === 'library' && !modal.contains(document.activeElement?.closest('input'))) renderLibrary(); }, 10000);
 setInterval(() => { if (connection.connected) void refreshGuide(); }, 15 * 60000);
 type('xtream');
-request('status').then(value => { updateConnection(value); if (value.connected) void refreshGuide(); }).catch(() => { q('#fs-storage-note').textContent = 'Open the Linux app or run the local browser preview to connect IPTV.'; });
+request('status').then(async value => {
+  updateConnection(value);
+  if (value.connected) void refreshGuide();
+  else if (value.saved) await connect({}, 'resume');
+}).catch(() => { q('#fs-storage-note').textContent = 'Open the Linux app or run the local browser preview to connect IPTV.'; });
