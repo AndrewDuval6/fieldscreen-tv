@@ -8,6 +8,7 @@ files:
   - main.cjs
   - preload.cjs
   - vault.cjs
+  - favorites.cjs
   - from: generated
     to: .
     filter:

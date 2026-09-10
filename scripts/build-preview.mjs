@@ -49,7 +49,7 @@ const scripts = [...source.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match 
 source = source.replace(/<script>[\s\S]*?<\/script>/g, '');
 const styles = [...source.matchAll(/<style>([\s\S]*?)<\/style>/g)].map(match => match[1]);
 source = source.replace(/<style>[\s\S]*?<\/style>/g, '');
-await writeFile(new URL('preview.css', output), fontFiles.join('\n') + '\n' + styles.join('\n') + '\n' + await readFile(new URL('./tv-shell.css', import.meta.url), 'utf8') + '\n' + await readFile(new URL('./iptv.css', import.meta.url), 'utf8') + '\n' + await readFile(new URL('./nfl.css', import.meta.url), 'utf8') + '\n' + await readFile(new URL('./pane.css', import.meta.url), 'utf8') + '\n' + await readFile(new URL('./mlb.css', import.meta.url), 'utf8') + '\n' + await readFile(new URL('./recorder.css', import.meta.url), 'utf8'));
+await writeFile(new URL('preview.css', output), fontFiles.join('\n') + '\n' + styles.join('\n') + '\n' + await readFile(new URL('./tv-shell.css', import.meta.url), 'utf8') + '\n' + await readFile(new URL('./iptv.css', import.meta.url), 'utf8') + '\n' + await readFile(new URL('./nfl.css', import.meta.url), 'utf8') + '\n' + await readFile(new URL('./pane.css', import.meta.url), 'utf8') + '\n' + await readFile(new URL('./mlb.css', import.meta.url), 'utf8') + '\n' + await readFile(new URL('./recorder.css', import.meta.url), 'utf8') + '\n' + await readFile(new URL('./favorites.css', import.meta.url), 'utf8'));
 await writeFile(new URL('preview.js', output), iconRuntime + '\n' + scripts.join('\n') + '\nlucide.createIcons();');
 const controller = (await readFile(new URL('./controller-core.mjs', import.meta.url), 'utf8')).replace(/^export /gm, '');
 const runtime = (await readFile(new URL('./tv-runtime.mjs', import.meta.url), 'utf8')).replace(/^import .*;\n/, '');
@@ -58,10 +58,10 @@ await writeFile(new URL('pane-runtime.js', output), '(()=>{\n' + await readFile(
 const iptvCore = (await readFile(new URL('./iptv-core.mjs', import.meta.url), 'utf8')).replace(/^export /gm, '');
 const iptvRuntime = (await readFile(new URL('./iptv-runtime.mjs', import.meta.url), 'utf8')).replace(/^import .*;\n/, '');
 await writeFile(new URL('iptv-runtime.js', output), '(()=>{\n' + iptvCore + '\n' + iptvRuntime + '\n})();');
-for (const name of ['sports','nfl','mlb','recorder']) await build({ entryPoints: [new URL(`./${name}-runtime.mjs`, import.meta.url).pathname], outfile: new URL(`${name}-runtime.js`, output).pathname, bundle: true, format: 'iife', target: 'chrome120' });
+for (const name of ['sports','nfl','mlb','recorder','favorites']) await build({ entryPoints: [new URL(`./${name}-runtime.mjs`, import.meta.url).pathname], outfile: new URL(`${name}-runtime.js`, output).pathname, bundle: true, format: 'iife', target: 'chrome120' });
 await writeFile(new URL('index.html', output), `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>FieldScreen TV — Preview</title><link rel="stylesheet" href="./preview.css"></head>
-<body>${source}<script src="./preview.js"></script><script src="./hls.min.js"></script><script src="./mpegts.js"></script><script src="./iptv-runtime.js"></script><script src="./sports-runtime.js"></script><script src="./recorder-runtime.js"></script><script src="./nfl-runtime.js"></script><script src="./mlb-runtime.js"></script><script src="./pane-runtime.js"></script><script src="./tv-runtime.js"></script></body></html>`);
+<body>${source}<script src="./preview.js"></script><script src="./hls.min.js"></script><script src="./mpegts.js"></script><script src="./iptv-runtime.js"></script><script src="./sports-runtime.js"></script><script src="./recorder-runtime.js"></script><script src="./nfl-runtime.js"></script><script src="./mlb-runtime.js"></script><script src="./favorites-runtime.js"></script><script src="./pane-runtime.js"></script><script src="./tv-runtime.js"></script></body></html>`);
 console.log('Built FieldScreen TV with NFL and MLB data, team statistics, IPTV, XMLTV, and controller support.');

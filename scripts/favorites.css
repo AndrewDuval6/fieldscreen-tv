@@ -1,0 +1,42 @@
+/* Use the same television scale and controller targets as the league views. */
+#fieldscreen-concept.fs-nfl-connected .ez-tv-switch button{font-size:calc(var(--ez-u)*20);padding:calc(var(--ez-u)*11) calc(var(--ez-u)*10);white-space:nowrap}
+#fieldscreen-concept .fs-favorite-heading>div{margin-right:auto}
+#fieldscreen-concept .fs-favorite-heading p{font:400 calc(var(--ez-u)*21) Inter;color:var(--fs-soft);margin:calc(var(--ez-u)*8) 0 0}
+#fieldscreen-concept .fs-favorite-heading .ez-button{flex-shrink:0}
+#fieldscreen-concept .fs-favorite-tools{display:flex;align-items:center;gap:calc(var(--ez-u)*16);margin:calc(var(--ez-u)*12) 0}
+#fieldscreen-concept .fs-favorite-tools input{flex:1;min-width:0;background:#0a211b;color:#edf8e9;border:1px solid #61977a88;border-radius:6px;padding:calc(var(--ez-u)*16);font:400 calc(var(--ez-u)*24) Inter}
+#fieldscreen-concept .fs-favorite-tools>div{display:flex;gap:calc(var(--ez-u)*8)}
+#fieldscreen-concept .fs-favorite-tools>span{font:500 calc(var(--ez-u)*20) Inter;color:#bad0bc;white-space:nowrap}
+#fieldscreen-concept .fs-favorite-picker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:calc(var(--ez-u)*14)}
+#fieldscreen-concept .fs-favorite-team{background:linear-gradient(120deg,#1c412f,#102b23);border:1px solid #57806566;border-radius:8px;padding:calc(var(--ez-u)*16);min-width:0}
+#fieldscreen-concept .fs-favorite-badge{display:block;font:500 calc(var(--ez-u)*17) 'IBM Plex Mono';color:#aed295;margin-bottom:calc(var(--ez-u)*8)}
+#fieldscreen-concept .fs-favorite-team button{width:100%;text-align:left;white-space:normal;font-size:calc(var(--ez-u)*25);min-height:calc(var(--ez-u)*58)}
+#fieldscreen-concept [data-favorite-team][aria-pressed=true],#fieldscreen-concept [data-favorite-filter][aria-pressed=true]{background:#b9ed91;color:#163623;border-color:#d5ffb4}
+#fieldscreen-concept .fs-favorite-following{display:flex;gap:calc(var(--ez-u)*10);flex-wrap:wrap;max-height:calc(var(--ez-u)*92);overflow:auto;margin:calc(var(--ez-u)*12) 0}
+#fieldscreen-concept .fs-favorite-following>span{border:1px solid #71975577;border-radius:6px;background:#24402b;color:#d3efb4;padding:calc(var(--ez-u)*9) calc(var(--ez-u)*14);font:500 calc(var(--ez-u)*18) 'IBM Plex Mono'}
+#fieldscreen-concept .fs-favorite-following b{color:#f1fbe4;margin:0 .4em}
+#fieldscreen-concept .fs-favorite-games section>h3{display:flex;align-items:center;gap:calc(var(--ez-u)*14);font:600 calc(var(--ez-u)*31) 'Barlow Condensed';margin:calc(var(--ez-u)*10) 0 calc(var(--ez-u)*14);color:#eff7e7}
+#fieldscreen-concept .fs-favorite-games section>h3>span{font:500 calc(var(--ez-u)*18) 'IBM Plex Mono';color:#a9ce94}
+#fieldscreen-concept .fs-favorite-games section+section{margin-top:calc(var(--ez-u)*28)}
+#fieldscreen-concept .fs-favorite-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:calc(var(--ez-u)*16)}
+#fieldscreen-concept .fs-favorite-game{border:1px solid #63887077;border-radius:10px;padding:calc(var(--ez-u)*22);background:linear-gradient(135deg,#193d2d,#0b231d);min-width:0}
+#fieldscreen-concept .fs-favorite-game.is-live{border-color:#b9ed91;box-shadow:inset 0 3px #b9ed91;background:radial-gradient(ellipse at top right,#47733555,transparent 70%),#133124}
+#fieldscreen-concept .fs-favorite-game-top{display:flex;justify-content:space-between;gap:calc(var(--ez-u)*8);font:500 calc(var(--ez-u)*17) 'IBM Plex Mono';color:#bcd6c0}
+#fieldscreen-concept .fs-favorite-game-top b{color:#c4ef9c;font-weight:500}
+#fieldscreen-concept .fs-favorite-matchup{margin:calc(var(--ez-u)*18) 0}
+#fieldscreen-concept .fs-favorite-matchup>div{display:flex;align-items:center;gap:calc(var(--ez-u)*12);min-height:calc(var(--ez-u)*65)}
+#fieldscreen-concept .fs-favorite-abbr{font:700 calc(var(--ez-u)*38) 'Barlow Condensed';width:calc(var(--ez-u)*64);flex-shrink:0;color:#f2f9e9}
+#fieldscreen-concept .fs-favorite-name{font:500 calc(var(--ez-u)*22)/1.2 Inter;flex:1;color:#d5e8d6}
+#fieldscreen-concept .fs-favorite-name i{font-style:normal;color:#b9ed91;margin-left:.3em}
+#fieldscreen-concept .fs-favorite-matchup strong{font:700 calc(var(--ez-u)*48) 'Barlow Condensed';font-variant-numeric:tabular-nums;color:#f1f9e9}
+#fieldscreen-concept .fs-favorite-game p{font:500 calc(var(--ez-u)*22)/1.35 Inter;color:#d7e9c6;margin:calc(var(--ez-u)*8) 0}
+#fieldscreen-concept .fs-favorite-game small{display:block;font:400 calc(var(--ez-u)*18)/1.35 Inter;color:#afc7b9;min-height:1.4em}
+#fieldscreen-concept .fs-favorite-actions{display:flex;gap:calc(var(--ez-u)*8);flex-wrap:wrap;margin-top:calc(var(--ez-u)*18)}
+#fieldscreen-concept .fs-favorite-actions button{font-size:calc(var(--ez-u)*20);padding:calc(var(--ez-u)*12)}
+#fieldscreen-concept .fs-favorite-empty{grid-column:1/-1;text-align:center;align-content:center;padding:calc(var(--ez-u)*50);color:#bbd5bc}
+#fieldscreen-concept .fs-favorite-empty>span{font-size:calc(var(--ez-u)*85);color:#b9ed91}
+#fieldscreen-concept .fs-favorite-empty h3,#fieldscreen-concept .fs-favorite-empty strong{font:600 calc(var(--ez-u)*42) 'Barlow Condensed';color:#edf8e6}
+#fieldscreen-concept .fs-favorite-empty p{font:400 calc(var(--ez-u)*23)/1.5 Inter}
+#fieldscreen-concept .fs-favorite-empty button{margin:calc(var(--ez-u)*8)}
+#fieldscreen-concept .fs-favorite-notice{border:1px solid #bf9c5d88;background:#42391e55;padding:calc(var(--ez-u)*12);font:400 calc(var(--ez-u)*20)/1.4 Inter;color:#ffe0a7}
+#fieldscreen-concept .fs-favorite-tools input:focus-visible,#fieldscreen-concept [data-favorite-team]:focus-visible{outline:3px solid #b9ed91;outline-offset:2px}

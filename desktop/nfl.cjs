@@ -112,10 +112,17 @@ function createNFL({ fetcher = fetch, now = Date.now } = {}) {
       const season = params.get('season'), week = params.get('week'), type = params.get('type') || '2', id = params.get('id');
       if ((season && (!/^\d{4}$/.test(season) || +season < 2000 || +season > new Date(now()).getFullYear() + 1)) || (week && (!/^\d{1,2}$/.test(week) || +week < 1 || +week > 23)) || !['1', '2', '3'].includes(type) || (id && !/^\d{1,12}$/.test(id))) return json(res, 400, { error: 'Choose a valid NFL season, week, or team.' });
       let result;
-      if (route === 'scoreboard') {
+      if (route === 'scoreboard' || route === 'favorites') {
         const query = new URLSearchParams({ limit: '1000' });
-        if (season) query.set('dates', season);
-        if (week) { if (!season) return json(res, 400, { error: 'Select a season with the week.' }); query.set('week', week); query.set('seasontype', type); }
+        if (route === 'favorites') {
+          const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(now()));
+          const start = new Date(today + 'T12:00:00Z'), end = new Date(start);
+          start.setUTCDate(start.getUTCDate() - 1); end.setUTCDate(end.getUTCDate() + 7);
+          query.set('dates', [start, end].map(d => d.toISOString().slice(0, 10).replaceAll('-', '')).join('-'));
+        } else {
+          if (season) query.set('dates', season);
+          if (week) { if (!season) return json(res, 400, { error: 'Select a season with the week.' }); query.set('week', week); query.set('seasontype', type); }
+        }
         result = await load(`scoreboard:${query}`, BASE + 'scoreboard?' + query, normalizeScoreboard, 25000);
       } else if (route === 'teams') {
         result = await load('teams', BASE + 'teams?limit=100', raw => { const teams = list(raw.sports?.[0]?.leagues?.[0]?.teams).map(t => team(t.team)); if (!teams.length) throw Error('Missing teams'); return { teams }; }, 86400000);

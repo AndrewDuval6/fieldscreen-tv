@@ -8,7 +8,7 @@
 
 A television-first sports control room, starting with NFL and MLB. Field positions, a featured game, and configurable video/data panes in one 16:9 screen.
 
-**Development preview · v0.1.0-preview.9.** ESPN scores, schedules, all 32 NFL teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. MLB scores, daily schedules, all 30 teams, live diamonds, standings, wild-card races, and postseason series are connected. IPTV playback, XMLTV guide matching, local recording, scheduled recording, and a saved-video library are included. Wireless casting is still planned.
+**Development preview · v0.1.0-preview.10.** ESPN scores, schedules, all 32 NFL teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. MLB scores, daily schedules, all 30 teams, live diamonds, standings, wild-card races, and postseason series are connected. IPTV playback, XMLTV guide matching, local recording, scheduled recording, and a saved-video library are included. Favorite teams from NFL and MLB share one live and upcoming games view, with device-local saved selections. Wireless casting is still planned.
 
 ## Steam Deck is the TV console
 
@@ -20,9 +20,9 @@ The intended setup is Steam Deck connected to the TV, an Xbox controller, and a 
 
 Linux preview builds are packaged as an **x64 AppImage**, plus a portable `.tar.gz` alternative. They bundle the runtime, fonts, icons, and preview artwork; Node.js and a development server are not needed to run a packaged download.
 
-[**Download the Linux preview**](https://github.com/AndrewDuval6/fieldscreen-tv/releases/tag/v0.1.0-preview.9)
+[**Download the Linux preview**](https://github.com/AndrewDuval6/fieldscreen-tv/releases/tag/v0.1.0-preview.10)
 
-Choose `FieldScreen-TV-0.1.0-preview.9-Linux-x86_64.AppImage`, or the portable `.tar.gz` alternative.
+Choose `FieldScreen-TV-0.1.0-preview.10-Linux-x86_64.AppImage`, or the portable `.tar.gz` alternative.
 
 To launch on Steam Deck:
 
@@ -64,6 +64,12 @@ cd fieldscreen-tv &&
 ```
 
 The installed AppImage has a stable path at `~/Applications/FieldScreen-TV.AppImage`. The desktop shortcut opens windowed; adding the AppImage itself to Steam opens the TV experience full screen. Use `./install.sh --no-launch` to install without opening it. Close the running app before updating; from the cloned folder, run `git pull --ff-only && ./install.sh`.
+
+## Follow your favorite teams
+
+Open **★ Favorites**, search across all 32 NFL and 30 MLB teams, and select the teams you follow. Choose **Done** to see their live games, the next seven days of scheduled games, and recent results together. **Watch live** uses your connected IPTV guide to find the broadcast; **Record game** opens the existing recording scheduler. Each game appears once even when you follow both teams, and baseball doubleheaders remain separate games.
+
+Use **Manage teams** to change your choices, or **Follow team** in either league’s Team Lab. Scores refresh every 30 seconds while Favorites is visible. Its schedule remains current when you browse historical dates elsewhere. Desktop selections are saved and verified in the app’s local data folder, independent of its browser address. They survive restarts and do not require an account. The website demo saves its choices only in that browser.
 
 ## Connect IPTV and find games
 

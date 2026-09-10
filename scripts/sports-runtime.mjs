@@ -14,8 +14,14 @@ function switchSport(league) {
 root.fieldscreenSports = {
   register(league,module) { modules.set(league,module); if (league === preference) switchSport(league); },
   active: () => active, switchSport,
-  game: (league,id) => modules.get(league)?.game(id),
-  render: () => modules.get(active)?.render() || false,
+  leagues: () => [...modules.keys()],
+  game: (league,id) => root.fieldscreenFavorites?.game(league,id) || modules.get(league)?.game(id),
+  render() {
+    if (api.state.view === 'favorites' && root.fieldscreenFavorites) return root.fieldscreenFavorites.render();
+    root.classList.remove('fs-favorites-active');
+    root.querySelector('[data-favorites-view]')?.setAttribute('aria-pressed','false'); picker.value = active;
+    return modules.get(active)?.render() || false;
+  },
   afterRender: () => modules.get(active)?.afterRender?.(),
   sourceOptions(source) { const selected = ['dashboard','standings'].includes(source) ? active+':'+source : source; return (root.fieldscreenIptv?.sourceOptions(source) || '') + [...modules.values()].map(m => m.sourceOptions(selected,false)).join(''); },
   feed(slot,html) { const source = String(api.state.slots[slot]); const league = source.startsWith('mlb:') ? 'mlb' : source.startsWith('game:') || source.startsWith('nfl:') ? 'nfl' : active; return modules.get(league)?.feed(slot,html); },

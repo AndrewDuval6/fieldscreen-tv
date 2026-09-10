@@ -76,10 +76,16 @@ function createMLB({ fetcher = fetch, now = Date.now } = {}) {
       const date = p.get('date'), season = p.get('season') || String(new Date(now()).getFullYear()), key = p.get('id');
       if (!/^\d{4}$/.test(season) || +season < 2000 || +season > new Date(now()).getFullYear()+1 || key && !id(key) || date && (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(Date.parse(date)) || new Date(date).toISOString().slice(0,10) !== date)) return json(res,400,{error:'Choose a valid baseball date, season, or team.'});
       let data;
-      if (route === 'scoreboard' || route === 'postseason') {
+      if (route === 'scoreboard' || route === 'postseason' || route === 'favorites') {
         const params = new URLSearchParams({sportId:'1',hydrate:'linescore,team,broadcasts(all),seriesStatus'});
         if (route === 'postseason') { params.set('season',season); params.set('gameTypes','F,D,L,W'); }
         let normalize = normalizeSchedule;
+        if (route === 'favorites') {
+          const today = new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(now()));
+          const start = new Date(today+'T12:00:00Z'), end = new Date(start);
+          start.setUTCDate(start.getUTCDate()-1); end.setUTCDate(end.getUTCDate()+7);
+          params.set('startDate',start.toISOString().slice(0,10)); params.set('endDate',end.toISOString().slice(0,10));
+        }
         if (route === 'scoreboard') {
           if (date) params.set('date',date);
           else {

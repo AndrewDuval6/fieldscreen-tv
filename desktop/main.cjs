@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, Menu, powerSaveBlocker, safeStorage, dialog
 const path = require('node:path');
 const { startLocalServer } = require('./iptv.cjs');
 const { createVault, configurePasswordStore } = require('./vault.cjs');
+const { createFavorites } = require('./favorites.cjs');
 
 let window;
 let wakeLock;
@@ -52,6 +53,15 @@ else {
       }
     });
     const isMainFrame = event => event.sender === window.webContents && event.senderFrame === window.webContents.mainFrame;
+    const favorites = createFavorites(path.join(app.getPath('userData'), 'favorites.json'));
+    ipcMain.handle('fieldscreen:favorites-read', event => {
+      if (!isMainFrame(event)) throw new Error('Main window only');
+      return favorites.read();
+    });
+    ipcMain.handle('fieldscreen:favorites-write', (event, teams) => {
+      if (!isMainFrame(event)) throw new Error('Main window only');
+      return favorites.write(teams);
+    });
     ipcMain.handle('fieldscreen:recording-folder', async event => {
       if (!isMainFrame(event)) throw new Error('Main window only');
       const result = await dialog.showOpenDialog(window, { title: 'Choose a folder for recorded games', buttonLabel: 'Save recordings here', defaultPath: (await localServer.recorder.status()).folder || app.getPath('videos'), properties: ['openDirectory','createDirectory'] });

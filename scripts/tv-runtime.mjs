@@ -42,6 +42,7 @@ function action(name) {
   if (!q('#fs-iptv-modal').hidden && name === 'back') { root.fieldscreenIptv.close(); return; }
   if (!q('#fs-iptv-modal').hidden && ['director','multiview','audio','layout','demo'].includes(name)) return;
   if (!q('#ez-launch').hidden) { if (name === 'accept' || name === 'back') q('#ez-enter').click(); return; }
+  if (name === 'back' && root.fieldscreenFavorites?.back()) return;
   const current = document.activeElement;
   if (['up','down','left','right'].includes(name)) {
     if (current?.matches('select') && ['left','right'].includes(name)) cycleSource(current, name === 'left' ? -1 : 1);
