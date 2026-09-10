@@ -5,6 +5,10 @@ export function currentProgram(channel, now = Date.now()) {
 export function nextProgram(channel, now = Date.now()) {
   return channel.programs?.find(p => p.start > now) || null;
 }
+export function redZoneChannels(channels, now = Date.now()) {
+  const pattern = /\bred[\s._-]*zone\b/i;
+  return channels.filter(channel => pattern.test(channel.name) || pattern.test(channel.epgId) || pattern.test(currentProgram(channel, now)?.title || ''));
+}
 export function filterChannels(channels, { query = '', group = '', filter = 'all', now = Date.now() } = {}) {
   const terms = query.toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);
   return channels.filter(channel => {

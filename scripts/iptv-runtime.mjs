@@ -1,4 +1,4 @@
-import { currentProgram, nextProgram, channelResults, reconcilePlayers } from './iptv-core.mjs';
+import { currentProgram, nextProgram, channelResults, reconcilePlayers, redZoneChannels } from './iptv-core.mjs';
 
 const root = document.getElementById('fieldscreen-concept'), api = root.fieldscreenConcept;
 const q = selector => root.querySelector(selector);
@@ -273,6 +273,30 @@ async function watchGame(game, slot = 0) {
     else { tuning.hidden = true; open(slot, '', game); message(connection.guideStatus === 'error' ? connection.guideNote : 'Your guide does not confirm a live channel for this matchup. The closest available listings are shown below.'); }
   } finally { if (revision === watchRevision) tuning.hidden = true; }
 }
+async function watchRedZone() {
+  if (!connection.connected) { open(); return; }
+  target = 0; previousFocus = document.activeElement;
+  const revision = ++watchRevision, providerRevision = connectionRevision;
+  tuning.hidden = false;
+  try {
+    let candidates = redZoneChannels(connection.channels);
+    if (!candidates.length) { await refreshGuide(); candidates = redZoneChannels(connection.channels); }
+    if (revision !== watchRevision || providerRevision !== connectionRevision) return;
+    let channel = candidates[0];
+    if (candidates.length > 1) {
+      try {
+        const result = await request('choose-broadcast', { channelIds: candidates.map(c => c.id), playing: players.length });
+        channel = candidates.find(c => c.id === result.channelId) || channel;
+      } catch { /* Normal playback can try the matching RedZone feed. */ }
+    }
+    if (revision !== watchRevision || providerRevision !== connectionRevision) return;
+    if (channel) selectChannel(channel, true);
+    else {
+      tuning.hidden = true; open(0, 'RedZone'); filter = 'redzone'; q('#fs-channel-search').value = ''; renderLibrary();
+      message('Your provider is not listing a RedZone channel or live RedZone programme right now. Try Refresh channels on game day.');
+    }
+  } finally { if (revision === watchRevision) tuning.hidden = true; }
+}
 q('#fs-watch-wall').addEventListener('click', () => { close(); showWall(); });
 modal.addEventListener('click', event => {
   const b = event.target.closest('button'); if (!b) return;
@@ -370,6 +394,7 @@ root.fieldscreenIptv = {
   },
 };
 root.addEventListener('click', event => {
+  if (event.target.closest('[data-quick-redzone]')) { event.preventDefault(); event.stopImmediatePropagation(); void watchRedZone(); return; }
   const button = event.target.closest('[data-channel]');
   if (button) { event.preventDefault(); event.stopImmediatePropagation(); open(Number(button.dataset.channel), button.dataset.channelSearch || ''); }
   const audio = event.target.closest('[data-audio]');

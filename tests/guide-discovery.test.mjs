@@ -3,13 +3,23 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { gzipSync } from 'node:zlib';
 import http from 'node:http';
-import { channelResults } from '../scripts/iptv-core.mjs';
+import { channelResults, redZoneChannels } from '../scripts/iptv-core.mjs';
 import { gameCoverage, matchBroadcasts, liveBroadcast } from '../scripts/nfl-core.mjs';
 const require = createRequire(import.meta.url);
 const { guideResponse } = require('../desktop/guide.cjs');
 const { startLocalServer } = require('../desktop/iptv.cjs');
 const xmlTime = ms => new Date(ms).toISOString().replace(/[-:T]/g, '').slice(0,14) + ' +0000';
 const now = Date.now();
+test('RedZone shortcut finds dedicated channels and current guide broadcasts without matching ordinary game descriptions', () => {
+  const channels = [
+    {id:'dedicated',name:'NFL RedZone HD'},
+    {id:'epg',name:'Sunday feed',epgId:'red-zone.us'},
+    {id:'current',name:'Sports event',programs:[{title:'NFL RedZone',start:now-1,end:now+1000}]},
+    {id:'upcoming',name:'Sports tomorrow',programs:[{title:'NFL RedZone',start:now+1000,end:now+2000}]},
+    {id:'wrong',name:'NBC',programs:[{title:'NFL Football',description:'red zone highlights',start:now-1,end:now+1000}]},
+  ];
+  assert.deepEqual(redZoneChannels(channels,now).map(c=>c.id),['dedicated','epg','current']);
+});
 const xml = `<tv><programme channel=" NBC.US " start="${xmlTime(now-3600000)}" stop="${xmlTime(now+3600000)}"><title>NFL: Patriots at Seahawks</title></programme></tv>`;
 
 test('XMLTV detects gzip from bytes, accepts mislabeled plain XML, and normalizes guide IDs', async () => {

@@ -18,3 +18,5 @@
 .fs-auto-tune{position:absolute;inset:0;z-index:45;display:grid;place-items:center;background:#061610c9;backdrop-filter:blur(12px)}.fs-auto-tune[hidden]{display:none}.fs-auto-tune>div{display:flex;align-items:center;flex-direction:column;gap:1em;padding:2.5em 4em;background:#102b20;border:1px solid #75ac70;border-radius:16px;box-shadow:0 20px 100px #000a}.fs-auto-tune img{width:6em;height:6em;object-fit:contain;animation:fs-tune-pulse 1.2s ease-in-out infinite}.fs-auto-tune strong{font:700 2em 'Barlow Condensed'}.fs-auto-tune span{font-size:.8em;color:#bad2bc}
 
 @keyframes fs-tune-pulse{50%{opacity:.5;transform:scale(.96)}}
+
+.ez-toolbar .fs-redzone-quick{border-color:#b8605a;color:#ffb7ab;background:#411f20;margin-left:.35em}.ez-toolbar .fs-redzone-quick:hover{background:#71352d}
