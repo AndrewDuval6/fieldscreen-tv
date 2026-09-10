@@ -4,6 +4,8 @@
 
 *Your gameday, on every screen.*
 
+[**Website & install instructions — fieldscreentv.org**](https://fieldscreentv.org)
+
 A television-first NFL control room for game day. Field positions, a featured game, and configurable video/data panes in one 16:9 screen.
 
 **Development preview · v0.1.0-preview.4.** ESPN scores, schedules, all 32 teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. IPTV playback and XMLTV guide matching are included. Wireless casting is still planned.
