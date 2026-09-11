@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import mlb from '../desktop/mlb.cjs';
-import { matchBroadcasts, gamePriority } from '../scripts/mlb-core.mjs';
+import { matchBroadcasts, gamePriority, resolveSelectedGame } from '../scripts/mlb-core.mjs';
 
 const rawGame = () => ({ gamePk:123,gameDate:'2026-09-10T00:00:00Z',officialDate:'2026-09-09',season:'2026',gameType:'R',status:{abstractGameState:'Live',detailedState:'In Progress'},teams:{away:{team:{id:137,name:'San Francisco Giants',teamName:'Giants',abbreviation:'SF'},score:0},home:{team:{id:119,name:'Los Angeles Dodgers',teamName:'Dodgers',abbreviation:'LAD'},score:1}},linescore:{currentInning:10,inningState:'Top',isTopInning:true,balls:0,strikes:2,outs:1,offense:{second:{id:77,fullName:'Runner Two'},batter:{id:7,fullName:'A Batter'}},defense:{pitcher:{id:8,fullName:'A Pitcher'}},innings:[{num:1,away:{runs:0},home:{runs:1}}],teams:{away:{runs:0,hits:2,errors:0},home:{runs:1,hits:3,errors:0}}},doubleHeader:'N' });
 const normalize = raw => mlb.normalizeSchedule({dates:[{games:[raw]}]}).games[0];
@@ -55,4 +55,14 @@ test('Today keeps last night’s live game after midnight and excludes yesterday
   const server=http.createServer((req,res)=>service.handle(req,res,()=>res.end()));await new Promise(r=>server.listen(0,'127.0.0.1',r));
   try{const r=await fetch(`http://127.0.0.1:${server.address().port}/preview/mlb/scoreboard`,{headers:{'X-FieldScreen':'1'}});const data=await r.json();assert.deepEqual(data.games.map(g=>g.id),['123','125']);assert.match(upstream,/startDate=2026-09-09/);assert.match(upstream,/endDate=2026-09-10/);}
   finally{service.close();server.closeAllConnections();await new Promise(r=>server.close(r));}
+});
+
+test('MLB remembered view tolerates an unloaded board and ignores detail from another game', () => {
+  assert.equal(resolveSelectedGame([], null, null), undefined);
+  const base = {id:'123', network:'Home broadcast', score:1};
+  assert.equal(resolveSelectedGame([base], '123', null), base);
+  assert.equal(resolveSelectedGame([base], '123', {game:{id:'999',score:8}}), base);
+  const current = resolveSelectedGame([base], '123', {game:{id:'123',score:2,network:''}});
+  assert.equal(current.score, 2);
+  assert.equal(current.network, 'Home broadcast');
 });

@@ -12,3 +12,11 @@ export function gameLabel(game) {
 export function gameCoverage(games,channels,now=Date.now()) {
   return games.filter(g => !g.complete && (g.live || Date.parse(g.date) >= now && Date.parse(g.date) < now+48*3600000)).sort((a,b)=>gamePriority(b,now)-gamePriority(a,now)).map(game => { const matches = matchBroadcasts(game,channels,now); return { game,matches,ready: game.live && matches.find(c=>c.matchScore===100 && c.matchedProgram?.start<=now && c.matchedProgram?.end>now) }; });
 }
+
+// Scoreboard data can still be loading when a remembered MLB view opens.
+export function resolveSelectedGame(games, selected, detail) {
+  const base = games.find(game => game.id === selected);
+  if (!base || detail?.game?.id !== base.id) return base;
+  return {...base, ...detail.game, network: base.network, series: base.series,
+    seriesStatus: base.seriesStatus, doubleHeader: base.doubleHeader, gameNumber: base.gameNumber};
+}

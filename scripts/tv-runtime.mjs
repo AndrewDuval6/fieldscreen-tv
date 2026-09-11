@@ -7,7 +7,7 @@ const supported = ['single', 'split', 'quad', 'focus'];
 let lastInput = {}, controllerIndex = null, activeControl = null, lastFrame = 0;
 
 function visibleControls() {
-  const dialog = root.fieldscreenRecordings?.isOpen() ? q('#fs-recordings-modal') : !q('#fs-iptv-modal').hidden ? q('#fs-iptv-modal') : !q('#ez-launch').hidden ? q('#ez-launch') : !q('#ez-overlay').hidden ? q('#ez-overlay') : root;
+  const dialog = root.fieldscreenNavigation?.isOpen() ? q('#fs-app-menu') : root.fieldscreenRecordings?.isOpen() ? q('#fs-recordings-modal') : !q('#fs-iptv-modal').hidden ? q('#fs-iptv-modal') : !q('#ez-launch').hidden ? q('#ez-launch') : !q('#ez-overlay').hidden ? q('#ez-overlay') : root;
   return [...dialog.querySelectorAll('button, select, input')].filter(element => {
     const rect = element.getBoundingClientRect();
     return rect.width > 0 && rect.height > 0 && !element.disabled && !element.closest('[inert]');
@@ -30,6 +30,10 @@ function cycleSource(select, amount) {
   focus(pane === undefined ? (select.id ? q('#' + CSS.escape(select.id)) : select) : q('[data-screen="' + pane + '"]'));
 }
 function action(name) {
+  if (root.fieldscreenNavigation?.isOpen()) {
+    if (name === 'back') { root.fieldscreenNavigation.close(); return; }
+    if (['director','multiview','audio','layout','demo'].includes(name)) return;
+  }
   if (root.fieldscreenRecordings?.isOpen()) {
     if (name === 'back') { root.fieldscreenRecordings.back(); return; }
     if (['director','multiview','audio','layout','demo'].includes(name)) return;
@@ -110,6 +114,7 @@ const hint = document.createElement('span'); hint.className = 'ez-controller-hin
 hint.textContent = 'A SELECT · X AUDIO / PIN · Y LAYOUT / AUTO · LB/RB VIEW · R STICK SCROLL';
 q('.ez-bottom').append(hint);
 api.state.tv = true; api.render();
-q('#ez-intro').click();
+// An embedded website demo must not steal focus or scroll its parent page.
+if (window.self === window.top) q('#ez-intro').click();
 if (window.fieldscreenDesktop && window.location.hash === '#connect-iptv') root.fieldscreenIptv.open();
 requestAnimationFrame(poll);

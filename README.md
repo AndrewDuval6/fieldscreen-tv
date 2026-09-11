@@ -8,34 +8,34 @@
 
 A television-first sports control room, with NFL, MLB, and MMA. Field positions, a featured game, and configurable video/data panes in one 16:9 screen.
 
-**Development preview · v0.1.0-preview.12.** ESPN scores, schedules, all 32 NFL teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. MLB scores, daily schedules, all 30 teams, live diamonds, standings, wild-card races, and postseason series are connected. IPTV playback, XMLTV guide matching, local recording, scheduled recording, and a saved-video library are included. Favorite teams from NFL and MLB share one live and upcoming games view, with device-local saved selections. UFC and PFL fight cards, numbered events, live bout status, and main-card recording are included. Wireless casting is still planned.
+**Development preview · v0.1.0-preview.13.** ESPN scores, schedules, all 32 NFL teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. MLB scores, daily schedules, all 30 teams, live diamonds, standings, wild-card races, and postseason series are connected. IPTV playback, XMLTV guide matching, local recording, scheduled recording, and a saved-video library are included. Favorite teams from NFL and MLB share one live and upcoming games view, with device-local saved selections. UFC and PFL fight cards, numbered events, live bout status, and main-card recording are included. Wireless casting is still planned.
 
 ## Steam Deck is the TV console
 
 The Steam Deck runs the same TV experience as a living-room PC: full screen, large-screen composition, and Xbox controller navigation. Screen: Auto fits the built-in Deck panel and switches back to the TV composition on an external display. The Screen control also offers Deck and TV overrides; TV keeps a 16:9 composition. The same dashboard, games, and controller controls remain available in both layouts.
 
-The intended setup is Steam Deck connected to the TV, an Xbox controller, and a Steam library shortcut. Apple TV and Android TV are planned platforms; this release runs on Linux only. Direct launch and Gaming Mode startup have been confirmed on Steam Deck. Automatic dock/undock sizing, external Xbox controllers, and Apple TV still need physical testing.
+The intended setup is Steam Deck connected to the TV, an Xbox controller, and a Steam library shortcut. Apple TV and Android TV are planned platforms; this release runs on Linux only. Gaming Mode launched successfully on an earlier build with manual launch options; the current packaged launcher still returns to Play on the tested Deck and is under investigation. Automatic dock/undock sizing, external Xbox controllers, and Apple TV still need physical testing.
 
 ## Download and launch
 
 Linux preview builds are packaged as an **x64 AppImage**, plus a portable `.tar.gz` alternative. They bundle the runtime, fonts, icons, and preview artwork; Node.js and a development server are not needed to run a packaged download.
 
-[**Download the Linux preview**](https://github.com/AndrewDuval6/fieldscreen-tv/releases/tag/v0.1.0-preview.12)
+[**Download the Linux preview**](https://github.com/AndrewDuval6/fieldscreen-tv/releases/tag/v0.1.0-preview.13)
 
-Choose `FieldScreen-TV-0.1.0-preview.12-Linux-x86_64.AppImage`, or the portable `.tar.gz` alternative.
+Choose `FieldScreen-TV-0.1.0-preview.13-Linux-x86_64.AppImage`, or the portable `.tar.gz` alternative.
 
 To launch on Steam Deck:
 
 1. On Steam Deck, switch to Desktop Mode and download the `.AppImage` from Releases.
 2. Move it into an `Applications` folder in your Home directory. In its file properties, allow it to run as a program.
 3. In Steam, choose **Add a Non-Steam Game**, browse to that AppImage, and add it.
-4. Return to Gaming Mode, connect your TV and Xbox controller, and launch the app. Use a standard Gamepad controller layout; this is a native Linux app and does not use Proton. Leave Launch Options empty with preview.12 or later: the packaged launcher handles Steam overlay compatibility and X11 automatically. Turn off Steam Overlay for this shortcut. Set Steam’s Game Resolution to Native for a docked TV; a fixed resolution in Steam can prevent the app from seeing the TV’s real size.
+4. Return to Gaming Mode, connect your TV and Xbox controller, and launch the app. Use a standard Gamepad controller layout; this is a native Linux app and does not use Proton. Gaming Mode startup currently has a known failure that returns to Steam’s Play button. The packaged compatibility workaround is not yet confirmed on Deck; the navigation update does not fix it. Turn off Steam Overlay for this shortcut. Set Steam’s Game Resolution to Native for a docked TV; a fixed resolution in Steam can prevent the app from seeing the TV’s real size.
 
 Valve documents adding apps to the Deck library in its [Desktop Mode FAQ](https://help.steampowered.com/en/faqs/view/671A-4453-E8D2-323C).
 
 If AppImage mounting is unavailable on a Linux installation, extract the `.tar.gz` download and add its `fieldscreen-tv` executable to Steam instead.
 
-The AppImage opens full screen for TV use. The installer’s desktop shortcut opens in a window; you can also pass `--windowed` when launching from a terminal. **F11** or the on-screen **Window / Fullscreen** button switches between the two. **Exit** quits the app; if recordings are active or scheduled, it offers to keep running in the background. Closing the window keeps scheduled recordings running and leaves a tray icon to reopen it. Display sleep is inhibited while the window is visible; pending recordings prevent system sleep while the app remains running.
+The AppImage opens full screen for TV use. The installer’s desktop shortcut opens in a window; you can also pass `--windowed` when launching from a terminal. **F11** or **Menu → Window / Fullscreen** switches between the two. **Menu → Exit** quits the app; if recordings are active or scheduled, it offers to keep running in the background. Closing the window keeps scheduled recordings running and leaves a tray icon to reopen it. Display sleep is inhibited while the window is visible; pending recordings prevent system sleep while the app remains running.
 
 ## Controller
 
@@ -187,3 +187,7 @@ With your IPTV provider and XMLTV guide connected, **Watch live** matches the ev
 **Record main card** schedules the later card session when separate preliminary times are listed; otherwise **Record event** uses the event start. The default MMA recording length is six hours and can be changed. Each recording captures one channel; prelims on a different channel require a separate recording. Keep the device online and FieldScreen running. Reschedule if the promotion changes the event time. Fight results and session times come from ESPN and may lag the broadcast; bout order can change. Provider subscriptions and event purchases are separate.
 
 NHL hockey is planned for **September 29, 2026**, the announced [2026–27 NHL opening night](https://www.nhl.com/news/nhl-announces-2026-27-regular-season-schedule). Hockey is not included in this preview. FieldScreen’s longer-term direction is every sport in one TV experience.
+
+## Simple navigation
+
+Games, Favorites, Watch, and Recordings are the four primary destinations. Inside Games, the sport selector switches NFL, MLB, and MMA, with Schedule, Standings, Teams, and MLB Postseason alongside it where available. Menu holds IPTV, RedZone, appearance, and display controls. The Watch view keeps screen layouts and its RedZone shortcut nearby. The menu supports keyboard focus and the existing controller navigation; B or Escape closes it.

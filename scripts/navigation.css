@@ -1,0 +1,120 @@
+/* Primary destinations stay in one quiet bar; tools live in the menu. */
+#fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav{grid-template-rows:calc(var(--ez-u)*100) minmax(0,1fr)}
+#fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav .ez-top{flex-wrap:nowrap;gap:calc(var(--ez-u)*28);padding:calc(var(--ez-u)*16) calc(var(--ez-u)*28);background:#0a1e17}
+#fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav .ez-brand{flex:1;min-width:0;font-size:calc(var(--ez-u)*31);white-space:nowrap;gap:calc(var(--ez-u)*8)}
+#fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav .fs-brand-mark{width:calc(var(--ez-u)*54);height:calc(var(--ez-u)*54)}
+#fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav .ez-brand-sub{display:none}
+#fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav .ez-tv-switch{display:flex;width:auto;flex-basis:auto;order:0;overflow:visible;gap:calc(var(--ez-u)*8);margin:0}
+#fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav .ez-tv-switch>button{font:500 max(12px,calc(var(--ez-u)*22)) Inter,sans-serif;min-height:32px;padding:calc(var(--ez-u)*13) calc(var(--ez-u)*20);border:1px solid transparent;border-radius:6px;background:transparent;color:#aec7b8;white-space:nowrap}
+#fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav .ez-tv-switch>button:hover{background:#183b2a;color:#f2f8ed}
+#fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav .ez-tv-switch>button[aria-pressed=true]{background:#bce898;color:#173121}
+#fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav .ez-tv-switch>button.is-recording{color:#ffbbb5;border-color:#ad5c51}
+#fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav #fs-menu-toggle{font:500 max(12px,calc(var(--ez-u)*21)) Inter,sans-serif;min-height:32px;padding:calc(var(--ez-u)*13) calc(var(--ez-u)*19);background:transparent;border:1px solid #41634c;border-radius:6px;white-space:nowrap}
+#fieldscreen-concept #fs-app-menu{--ez-ink:#ecf4e9;width:min(580px,calc(100vw - 32px));max-height:calc(100dvh - 40px);overflow:auto;border:1px solid #53745b;border-radius:16px;padding:24px;background:#0f281e;color:#ecf4e9;box-shadow:0 30px 100px #0009;font:400 16px/1.5 Inter,sans-serif}
+#fieldscreen-concept #fs-app-menu::backdrop{background:#020b07bb;backdrop-filter:blur(8px)}
+#fieldscreen-concept #fs-app-menu header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px}
+#fieldscreen-concept #fs-app-menu h2{font:600 24px/1.3 Inter,sans-serif}
+#fieldscreen-concept #fs-app-menu h3{font:500 14px/1.5 Inter,sans-serif;color:#a9c4b2;margin:0 0 12px}
+#fieldscreen-concept #fs-app-menu section{padding:20px 0;border-top:1px solid #375541}
+#fieldscreen-concept #fs-app-menu section:last-child{padding-bottom:0}
+#fieldscreen-concept #fs-app-menu section>div{display:flex;gap:10px;flex-wrap:wrap}
+#fieldscreen-concept #fs-app-menu .fs-extra-tabs{display:contents}
+#fieldscreen-concept #fs-app-menu button,#fieldscreen-concept #fs-app-menu select{min-height:44px;font:500 16px/1.3 Inter,sans-serif;padding:10px 14px;border:1px solid #476950;border-radius:7px;background:#193b2a;color:#ebf5e5}
+#fieldscreen-concept #fs-app-menu button:hover{background:#294f36;border-color:#bce898}
+#fieldscreen-concept #fs-app-menu .fs-display-control{margin:0;flex-basis:100%}
+#fieldscreen-concept #fs-app-menu .fs-display-control select{width:100%}
+#fieldscreen-concept #fs-app-menu .ez-button svg{width:18px;height:18px}
+#fieldscreen-concept #fs-app-menu p{font:400 14px/1.6 Inter,sans-serif;color:#a6bfad;margin-top:18px}
+#fieldscreen-concept #fs-app-menu .ez-native-exit{border-color:#775847}
+@media(max-width:760px){
+  #fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav{grid-template-rows:76px minmax(0,1fr)}
+  #fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav .ez-top{flex-wrap:wrap;align-content:center;gap:4px 12px;padding:4px 12px}
+  #fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav .ez-brand{font-size:17px}
+  #fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav .fs-brand-mark{width:25px;height:25px}
+  #fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav .ez-tv-switch{order:10;flex-basis:100%;justify-content:space-between;gap:2px}
+  #fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav .ez-tv-switch>button{padding:4px 7px}
+  #fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav #fs-menu-toggle{min-height:28px;padding:4px 12px}
+}
+
+/* Shared presentation for the expanded sports workspace. */
+#fieldscreen-concept.fs-simple-nav{--fs-pop:#bfdfa7;--fs-line:#65847435;--fs-panel:#102a21;--fs-soft:#acc2b5;--ez-radius:8px;--ez-accent:#bfdfa7}
+#fieldscreen-concept.ez-field-green.ez-stadium.fs-simple-nav{background:#e8eeea;color:#23372c;--ez-muted:#63776c;--ez-line:#b9c9bf;--ez-panel:#f6f8f5}
+#fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav .ez-main{background:none;padding:calc(var(--ez-u)*22) calc(var(--ez-u)*32) calc(var(--ez-u)*20);gap:calc(var(--ez-u)*20)}
+#fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav .ez-tv-switch>button{border-radius:0;background:none;color:#a5b9ac;border:0;border-bottom:2px solid transparent;padding:calc(var(--ez-u)*14) calc(var(--ez-u)*20)}
+#fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav .ez-tv-switch>button[aria-pressed=true]{color:#e5f3df;border-bottom-color:#bfe19f;background:none}
+#fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav .ez-top{background:#091d16;border-bottom:1px solid #365242;gap:calc(var(--ez-u)*34)}
+#fieldscreen-concept .fs-context-bar{display:none;align-items:center;gap:calc(var(--ez-u)*24);flex:0 0 auto;min-width:0}
+#fieldscreen-concept[data-primary-view=games] .fs-context-bar{display:flex}
+#fieldscreen-concept .fs-context-tabs{display:flex;gap:calc(var(--ez-u)*8);min-width:0;align-items:center}
+#fieldscreen-concept .fs-context-tabs .fs-extra-tabs{display:contents}
+#fieldscreen-concept .fs-context-tabs button{font:500 calc(var(--ez-u)*22)/1.3 Inter,sans-serif;padding:calc(var(--ez-u)*12) calc(var(--ez-u)*16);background:transparent;border:1px solid transparent;border-radius:5px;color:#92ad9e;white-space:nowrap}
+#fieldscreen-concept .fs-context-tabs button[aria-pressed=true]{background:#1d3d2e;color:#e6f4dd}
+#fieldscreen-concept.ez-stadium .fs-context-tabs button{color:#53685b}
+#fieldscreen-concept.ez-stadium .fs-context-tabs button[aria-pressed=true]{background:#fff;color:#243e2d;border-color:#c4d2c6}
+#fieldscreen-concept.fs-simple-nav #fs-sport-select{font:600 calc(var(--ez-u)*25)/1.3 Inter,sans-serif;max-width:none;padding:calc(var(--ez-u)*10) calc(var(--ez-u)*12);background:transparent;color:#e9f2e4;border:1px solid #48634e;border-radius:6px}
+#fieldscreen-concept.ez-stadium.fs-simple-nav #fs-sport-select{color:#23412e;background:#f8faf6;border-color:#b8cbbf}
+#fieldscreen-concept .fs-context-actions{display:flex;margin-left:auto;gap:calc(var(--ez-u)*8)}
+#fieldscreen-concept:not(:has(#ez-director-surface:not([hidden]))) .fs-context-actions{display:none}
+#fieldscreen-concept .fs-context-actions button{font:500 calc(var(--ez-u)*20)/1.3 Inter,sans-serif;padding:calc(var(--ez-u)*10) calc(var(--ez-u)*14);border:1px solid #48624e;border-radius:6px;background:transparent;color:#bed1bf;white-space:nowrap}
+#fieldscreen-concept.ez-stadium .fs-context-actions button{border-color:#c3d1c7;color:#4b6351}
+#fieldscreen-concept.ez-tv.ez-tv-fit.ez-director.fs-simple-nav #ez-director-surface{grid-template-rows:minmax(0,1fr) calc(var(--ez-u)*48);gap:calc(var(--ez-u)*18)}
+#fieldscreen-concept.fs-simple-nav .ez-dir-control{display:none}
+#fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav .ez-dir-layout,#fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav .ez-dir-fields{grid-row:1}
+#fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav .ez-dir-timeline{grid-row:2}
+#fieldscreen-concept.fs-simple-nav .ez-dir-broadcast{border:1px solid #385a46;border-radius:8px;box-shadow:none;background-color:#112c21}
+#fieldscreen-concept.fs-simple-nav .ez-dir-broadcast-top{background:#10271e;color:#bed1c2;border-bottom:1px solid #ffffff12}
+#fieldscreen-concept.fs-simple-nav .ez-dir-feature{background:linear-gradient(180deg,#102d2788,#10291edb)}
+#fieldscreen-concept.fs-simple-nav .ez-dir-feature-kind{border:0;border-radius:3px;letter-spacing:.08em;background:#c1dcb515;color:#c5d7a9}
+#fieldscreen-concept.fs-simple-nav .fs-nfl-matchup b{text-shadow:none;letter-spacing:.01em}
+#fieldscreen-concept.fs-simple-nav .ez-dir-turf{background:#153424;border-top:1px solid #87a77924;border-bottom:1px solid #87a77924}
+#fieldscreen-concept.fs-simple-nav .ez-dir-lower-third{background:#0e261bdd;border-top:0}
+#fieldscreen-concept.fs-simple-nav .ez-dir-mini{border-radius:7px;box-shadow:none;border-color:#bed0c4;background:#f7faf6;padding:calc(var(--ez-u)*16)}
+#fieldscreen-concept:not(.ez-stadium).fs-simple-nav .ez-dir-mini{background:#112b21;border-color:#3b5949}
+#fieldscreen-concept.fs-simple-nav .ez-dir-mini[aria-pressed=true]{border-color:#5d8866;box-shadow:inset 0 0 0 1px #5d8866}
+#fieldscreen-concept.fs-simple-nav .ez-dir-mini-head{font-family:Inter,sans-serif;font-weight:500}
+#fieldscreen-concept.fs-simple-nav .ez-dir-mini-head>b{font-family:'Barlow Condensed',sans-serif;font-weight:600;letter-spacing:0}
+#fieldscreen-concept.fs-simple-nav .ez-dir-mini-foot{font-family:Inter,sans-serif;color:#657c6c}
+#fieldscreen-concept:not(.ez-stadium).fs-simple-nav .ez-dir-mini-foot{color:#abc3b2}
+#fieldscreen-concept.fs-simple-nav .ez-dir-timeline>span:first-child{display:none}
+#fieldscreen-concept.fs-simple-nav #ez-dir-moments .ez-button{border-radius:5px;background:transparent;border-color:#9cb8a5;color:#355941;font-size:calc(var(--ez-u)*21)}
+#fieldscreen-concept:not(.ez-stadium).fs-simple-nav #ez-dir-moments .ez-button{color:#c6ddba;border-color:#516d58}
+#fieldscreen-concept.fs-simple-nav #ez-dir-moments .ez-button:first-child{background:#28533a;border-color:#28533a;color:#f0f6e9}
+#fieldscreen-concept.fs-simple-nav .fs-nfl-card,#fieldscreen-concept.fs-simple-nav .fs-schedule-game,#fieldscreen-concept.fs-simple-nav .fs-favorite-game{background:#122d22;border:1px solid #42624c;border-radius:8px;box-shadow:none}
+#fieldscreen-concept.fs-simple-nav .fs-nfl-controls h2{font-family:Inter,sans-serif;font-size:calc(var(--ez-u)*31);font-weight:600;letter-spacing:-.025em}
+#fieldscreen-concept.fs-simple-nav .fs-nfl-card h3{font:600 calc(var(--ez-u)*25)/1.3 Inter,sans-serif;letter-spacing:0;color:#cfe2c3}
+#fieldscreen-concept.fs-simple-nav .ez-toolbar .ez-toolgroup{gap:calc(var(--ez-u)*6)}
+#fieldscreen-concept.fs-simple-nav .ez-toolbar .ez-button{border:1px solid transparent;border-radius:5px;background:transparent;box-shadow:none;color:#43614d;font-size:calc(var(--ez-u)*21)}
+#fieldscreen-concept:not(.ez-stadium).fs-simple-nav .ez-toolbar .ez-button{color:#b9cdb6}
+#fieldscreen-concept.fs-simple-nav .ez-toolbar .ez-button.on{background:#26523a;color:#ecf5e8;border-color:#26523a}
+#fieldscreen-concept.fs-simple-nav .ez-toolbar .fs-redzone-quick{color:#a34b46;background:transparent;border-left:1px solid #c4cfc1;border-radius:0;margin-left:calc(var(--ez-u)*14);padding-left:calc(var(--ez-u)*24)}
+#fieldscreen-concept.fs-simple-nav .ez-feed{border-radius:8px;box-shadow:none;border:1px solid #42624c}
+#fieldscreen-concept.fs-simple-nav .ez-feed-head{background:#173626;color:#c1d3bd;border-bottom:1px solid #49634b}
+#fieldscreen-concept.fs-simple-nav .ez-feed-head select{background:#10291d;border:1px solid #49664e;border-radius:4px;color:#e1eed9;padding:calc(var(--ez-u)*8);font-family:Inter,sans-serif}
+#fieldscreen-concept.fs-simple-nav .ez-bottom{font-family:Inter,sans-serif;font-size:calc(var(--ez-u)*17);color:#738877;min-width:0;gap:calc(var(--ez-u)*24)}
+#fieldscreen-concept.fs-simple-nav .ez-bottom #ez-status{max-width:65%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:calc(var(--ez-u)*16)}
+#fieldscreen-concept.fs-simple-nav .fs-iptv-panel,#fieldscreen-concept.fs-simple-nav .fs-rec-shell{background:#10271d;border:1px solid #4b6850;box-shadow:0 32px 90px #0008;border-radius:12px}
+#fieldscreen-concept.fs-simple-nav .fs-iptv-heading h2,#fieldscreen-concept.fs-simple-nav #fs-recordings-title{font:600 clamp(22px,2.4cqw,40px)/1.2 Inter,sans-serif;letter-spacing:-.025em;margin-top:8px}
+#fieldscreen-concept.fs-simple-nav .fs-iptv-modal .ez-button{border-radius:6px;box-shadow:none;background:#1a3b2b;color:#deebd8}
+#fieldscreen-concept.fs-simple-nav .fs-iptv-modal .ez-button.ez-primary{background:#bedc9e;color:#16301e}
+#fieldscreen-concept.fs-simple-nav .fs-channel{background:#153224;border-color:#3c5841;border-radius:6px}
+#fieldscreen-concept.fs-simple-nav .fs-channel:hover{border-color:#9dbd80;background:#20472f}
+@media(max-width:760px){
+  #fieldscreen-concept.ez-tv.ez-tv-fit.fs-simple-nav .ez-tv-switch{justify-content:flex-start;gap:12px}
+  #fieldscreen-concept .fs-context-bar{gap:6px}
+  #fieldscreen-concept .fs-context-tabs{gap:0}
+  #fieldscreen-concept .fs-context-tabs button{padding:4px 6px;font-size:max(10px,calc(var(--ez-u)*22))}
+  #fieldscreen-concept.fs-simple-nav #fs-sport-select{font-size:12px;padding:4px}
+  #fieldscreen-concept .fs-context-actions{gap:3px}
+  #fieldscreen-concept .fs-context-actions button{font-size:10px;padding:4px}
+}
+/* Team selection uses one surface per choice, with readable light-theme text. */
+#fieldscreen-concept.fs-simple-nav .fs-favorite-team{background:#102b21;box-shadow:none;border-radius:7px}
+#fieldscreen-concept.fs-simple-nav .fs-favorite-team button{background:transparent;color:#deecd5;border-color:transparent;padding:calc(var(--ez-u)*10) 0;text-align:left;justify-content:flex-start}
+#fieldscreen-concept.fs-simple-nav .fs-favorite-team button[aria-pressed=true]{color:#d0f3aa;background:#274735;padding-left:calc(var(--ez-u)*12)}
+#fieldscreen-concept.ez-stadium.fs-simple-nav .fs-favorite-team{background:#f8faf7;border-color:#c3d1c8}
+#fieldscreen-concept.ez-stadium.fs-simple-nav .fs-favorite-team button{color:#2b4834}
+#fieldscreen-concept.ez-stadium.fs-simple-nav .fs-favorite-team button[aria-pressed=true]{background:#d8e9ca;color:#17381f}
+#fieldscreen-concept.ez-stadium.fs-simple-nav .fs-favorite-badge,#fieldscreen-concept.ez-stadium.fs-simple-nav .fs-favorite-heading p,#fieldscreen-concept.ez-stadium.fs-simple-nav .fs-favorite-tools>span{color:#5b7364}
+#fieldscreen-concept.ez-stadium.fs-simple-nav .fs-favorite-games section>h3,#fieldscreen-concept.ez-stadium.fs-simple-nav .fs-favorite-empty strong,#fieldscreen-concept.ez-stadium.fs-simple-nav .fs-favorite-empty h3{color:#2a4434}
+#fieldscreen-concept.ez-stadium.fs-simple-nav .fs-favorite-games section>h3>span,#fieldscreen-concept.ez-stadium.fs-simple-nav .fs-favorite-empty{color:#5b7364}
+#fieldscreen-concept.ez-stadium.fs-simple-nav .fs-nfl-empty{--fs-soft:#5b7364;background:none}
