@@ -1,8 +1,9 @@
-const { app, BrowserWindow, ipcMain, Menu, powerSaveBlocker, safeStorage, dialog, Tray, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, powerSaveBlocker, safeStorage, dialog, Tray, shell, screen } = require('electron');
 const path = require('node:path');
 const { startLocalServer } = require('./iptv.cjs');
 const { createVault, configurePasswordStore } = require('./vault.cjs');
 const { createFavorites } = require('./favorites.cjs');
+const { windowBounds, displayState } = require('./display.cjs');
 
 let window;
 let wakeLock;
@@ -33,9 +34,10 @@ else {
       onChange: refreshBackground,
     } });
     Menu.setApplicationMenu(null);
+    const initialBounds = windowBounds(screen.getPrimaryDisplay(), startFullscreen);
     window = new BrowserWindow({
-      title: 'FieldScreen TV — Preview', width: 1600, height: 900,
-      minWidth: 960, minHeight: 540, fullscreen: startFullscreen,
+      title: 'FieldScreen TV — Preview', ...initialBounds,
+      minWidth: Math.min(640, initialBounds.width), minHeight: Math.min(360, initialBounds.height), fullscreen: startFullscreen,
       backgroundColor: '#07140f', show: false, autoHideMenuBar: true,
       icon: path.join(__dirname, 'icon.png'),
       webPreferences: {
@@ -53,6 +55,26 @@ else {
       }
     });
     const isMainFrame = event => event.sender === window.webContents && event.senderFrame === window.webContents.mainFrame;
+    const currentDisplay = () => screen.getDisplayMatching(window.getBounds());
+    ipcMain.handle('fieldscreen:display-state', event => {
+      if (!isMainFrame(event)) throw new Error('Main window only');
+      return displayState(currentDisplay());
+    });
+    const notifyDisplay = () => {
+      if (!window || window.isDestroyed()) return;
+      window.webContents.send('fieldscreen:display-state', displayState(currentDisplay()));
+    };
+    const refitDisplay = () => {
+      if (!window || window.isDestroyed()) return;
+      if (window.isFullScreen()) window.setBounds(windowBounds(currentDisplay(), true));
+      notifyDisplay();
+    };
+    for (const event of ['display-added','display-removed','display-metrics-changed']) screen.on(event, refitDisplay);
+    window.on('move', notifyDisplay);
+    window.on('resize', notifyDisplay);
+    window.on('closed', () => {
+      for (const event of ['display-added','display-removed','display-metrics-changed']) screen.removeListener(event, refitDisplay);
+    });
     const favorites = createFavorites(path.join(app.getPath('userData'), 'favorites.json'));
     ipcMain.handle('fieldscreen:favorites-read', event => {
       if (!isMainFrame(event)) throw new Error('Main window only');

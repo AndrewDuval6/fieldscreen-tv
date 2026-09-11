@@ -7,6 +7,12 @@ contextBridge.exposeInMainWorld('fieldscreenDesktop', {
   onBackground: callback => { const listener = () => callback(); ipcRenderer.on('fieldscreen:background',listener); return () => ipcRenderer.removeListener('fieldscreen:background',listener); },
   quit: () => ipcRenderer.send('fieldscreen:quit'),
   windowState: () => ipcRenderer.invoke('fieldscreen:window-state'),
+  displayState: () => ipcRenderer.invoke('fieldscreen:display-state'),
+  onDisplayState: callback => {
+    const listener = (_event, state) => callback(state);
+    ipcRenderer.on('fieldscreen:display-state', listener);
+    return () => ipcRenderer.removeListener('fieldscreen:display-state', listener);
+  },
   toggleFullscreen: () => ipcRenderer.invoke('fieldscreen:toggle-fullscreen'),
   setFullscreen: fullscreen => ipcRenderer.invoke('fieldscreen:set-fullscreen', fullscreen),
   onWindowState: callback => {

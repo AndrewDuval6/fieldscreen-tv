@@ -9,6 +9,7 @@ files:
   - preload.cjs
   - vault.cjs
   - favorites.cjs
+  - display.cjs
   - from: generated
     to: .
     filter:
@@ -28,6 +29,7 @@ extraFiles:
       - NOTICE.txt
 asar: true
 compression: normal
+afterPack: scripts/after-pack.cjs
 linux:
   syncDesktopName: true
   executableName: fieldscreen-tv

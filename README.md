@@ -8,28 +8,28 @@
 
 A television-first sports control room, with NFL, MLB, and MMA. Field positions, a featured game, and configurable video/data panes in one 16:9 screen.
 
-**Development preview · v0.1.0-preview.11.** ESPN scores, schedules, all 32 NFL teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. MLB scores, daily schedules, all 30 teams, live diamonds, standings, wild-card races, and postseason series are connected. IPTV playback, XMLTV guide matching, local recording, scheduled recording, and a saved-video library are included. Favorite teams from NFL and MLB share one live and upcoming games view, with device-local saved selections. UFC and PFL fight cards, numbered events, live bout status, and main-card recording are included. Wireless casting is still planned.
+**Development preview · v0.1.0-preview.12.** ESPN scores, schedules, all 32 NFL teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. MLB scores, daily schedules, all 30 teams, live diamonds, standings, wild-card races, and postseason series are connected. IPTV playback, XMLTV guide matching, local recording, scheduled recording, and a saved-video library are included. Favorite teams from NFL and MLB share one live and upcoming games view, with device-local saved selections. UFC and PFL fight cards, numbered events, live bout status, and main-card recording are included. Wireless casting is still planned.
 
 ## Steam Deck is the TV console
 
-The Steam Deck runs the same TV experience as a living-room PC: full screen, large-screen composition, and Xbox controller navigation. There is no separate handheld layout. On a 16:10 screen the 16:9 composition is letterboxed, preserving the TV layout.
+The Steam Deck runs the same TV experience as a living-room PC: full screen, large-screen composition, and Xbox controller navigation. Screen: Auto fits the built-in Deck panel and switches back to the TV composition on an external display. The Screen control also offers Deck and TV overrides; TV keeps a 16:9 composition. The same dashboard, games, and controller controls remain available in both layouts.
 
-The intended setup is Steam Deck connected to the TV, an Xbox controller, and a Steam library shortcut. Apple TV and Android TV are planned platforms; this release runs on Linux only. Physical Steam Deck, Xbox controller, and Apple TV testing is still pending.
+The intended setup is Steam Deck connected to the TV, an Xbox controller, and a Steam library shortcut. Apple TV and Android TV are planned platforms; this release runs on Linux only. Direct launch and Gaming Mode startup have been confirmed on Steam Deck. Automatic dock/undock sizing, external Xbox controllers, and Apple TV still need physical testing.
 
 ## Download and launch
 
 Linux preview builds are packaged as an **x64 AppImage**, plus a portable `.tar.gz` alternative. They bundle the runtime, fonts, icons, and preview artwork; Node.js and a development server are not needed to run a packaged download.
 
-[**Download the Linux preview**](https://github.com/AndrewDuval6/fieldscreen-tv/releases/tag/v0.1.0-preview.11)
+[**Download the Linux preview**](https://github.com/AndrewDuval6/fieldscreen-tv/releases/tag/v0.1.0-preview.12)
 
-Choose `FieldScreen-TV-0.1.0-preview.11-Linux-x86_64.AppImage`, or the portable `.tar.gz` alternative.
+Choose `FieldScreen-TV-0.1.0-preview.12-Linux-x86_64.AppImage`, or the portable `.tar.gz` alternative.
 
 To launch on Steam Deck:
 
 1. On Steam Deck, switch to Desktop Mode and download the `.AppImage` from Releases.
 2. Move it into an `Applications` folder in your Home directory. In its file properties, allow it to run as a program.
 3. In Steam, choose **Add a Non-Steam Game**, browse to that AppImage, and add it.
-4. Return to Gaming Mode, connect your TV and Xbox controller, and launch the app. Use a standard Gamepad controller layout; this is a native Linux app and does not use Proton.
+4. Return to Gaming Mode, connect your TV and Xbox controller, and launch the app. Use a standard Gamepad controller layout; this is a native Linux app and does not use Proton. Leave Launch Options empty with preview.12 or later: the packaged launcher handles Steam overlay compatibility and X11 automatically. Turn off Steam Overlay for this shortcut. Set Steam’s Game Resolution to Native for a docked TV; a fixed resolution in Steam can prevent the app from seeing the TV’s real size.
 
 Valve documents adding apps to the Deck library in its [Desktop Mode FAQ](https://help.steampowered.com/en/faqs/view/671A-4453-E8D2-323C).
 
