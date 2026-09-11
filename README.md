@@ -6,9 +6,9 @@
 
 [**Website & install instructions — fieldscreentv.org**](https://fieldscreentv.org)
 
-A television-first sports control room, starting with NFL and MLB. Field positions, a featured game, and configurable video/data panes in one 16:9 screen.
+A television-first sports control room, with NFL, MLB, and MMA. Field positions, a featured game, and configurable video/data panes in one 16:9 screen.
 
-**Development preview · v0.1.0-preview.11.** ESPN scores, schedules, all 32 NFL teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. MLB scores, daily schedules, all 30 teams, live diamonds, standings, wild-card races, and postseason series are connected. IPTV playback, XMLTV guide matching, local recording, scheduled recording, and a saved-video library are included. Favorite teams from NFL and MLB share one live and upcoming games view, with device-local saved selections. Wireless casting is still planned.
+**Development preview · v0.1.0-preview.11.** ESPN scores, schedules, all 32 NFL teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. MLB scores, daily schedules, all 30 teams, live diamonds, standings, wild-card races, and postseason series are connected. IPTV playback, XMLTV guide matching, local recording, scheduled recording, and a saved-video library are included. Favorite teams from NFL and MLB share one live and upcoming games view, with device-local saved selections. UFC and PFL fight cards, numbered events, live bout status, and main-card recording are included. Wireless casting is still planned.
 
 ## Steam Deck is the TV console
 
@@ -84,7 +84,7 @@ The channel picker is a fallback when the guide cannot confirm coverage. You can
 
 **Refresh channels** reloads your M3U URL or Xtream lineup using the current connection, including session-only connections. It updates channel names and groups, adds new channels, removes missing ones, and shows the last successful update time. Channels whose stream URLs stay the same keep playing; removed or changed streams return their panes to the dashboard. A failed refresh keeps the previous lineup. For an imported M3U file, the button asks you to select an updated file; a local file cannot retrieve provider changes by itself. Remembered file imports update their encrypted saved copy.
 
-The guide joins XMLTV programme channel IDs to the playlist's `tvg-id` (or Xtream `epg_channel_id`). XML and compressed feeds are detected from their contents, including short provider links without a file extension. **Your games** automatically ranks live and upcoming NFL and MLB coverage across the whole lineup. **Watch game** selects a current guide listing that names both teams; **Check coverage** shows alternatives when only a team, channel name, or scheduled network matches. Network suggestions are marked as unconfirmed. Matching uses text and kickoff times, not video recognition.
+The guide joins XMLTV programme channel IDs to the playlist's `tvg-id` (or Xtream `epg_channel_id`). XML and compressed feeds are detected from their contents, including short provider links without a file extension. **Your games** automatically ranks live and upcoming NFL, MLB, and MMA coverage across the whole lineup. **Watch game** selects a current guide listing that names both teams; **Check coverage** shows alternatives when only a team, channel name, or scheduled network matches. Network suggestions are marked as unconfirmed. Matching uses text and kickoff times, not video recognition.
 
 **All channels** searches the entire lineup and the next 48 hours of guide listings. **Ctrl+F** focuses this search. Lineups of up to 500 channels appear in one scrollable list; larger lineups are filtered before pagination. **Update TV guide** lets you replace only the guide link while keeping channels connected. Guide refresh runs every 15 minutes and after channel refresh. Download failures keep the last available listings, report the reason, and honor a retry delay.
 
@@ -111,7 +111,7 @@ Recordings are fragmented MP4 files with the original video and AAC audio. HLS a
 
 ## Baseball
 
-Use the **NFL / MLB** selector in the top bar to switch sports. Your last sport is remembered on this device. Both sports share your saved IPTV provider, guide, fullscreen controls, and multiview. Choose NFL or MLB scorecards individually in each pane.
+Use the **NFL / MLB / MMA** selector in the top bar to switch sports. Your last sport is remembered on this device. All three sports share your saved IPTV provider, guide, fullscreen controls, and multiview. Choose NFL or MLB scorecards, MMA fight cards, or event boards individually in each pane.
 
 **Baseball Director** prioritizes live games, close late innings, and bases-loaded situations. The diamond shows reported occupied bases, batter, pitcher, balls, strikes, and outs. Between innings and after a final, stale runners and counts are hidden. Fields are schematic, not player tracking. **Game details** adds inning scoring, runs/hits/errors, latest at-bats, game batting statistics, and the current pitcher's pitch count when reported.
 
@@ -142,10 +142,10 @@ The installed app retrieves and caches data locally. IPTV guide contents and pro
 - Detailed proportioned fields with home-team end zones, yard numbers, NFL hash marks, and reported possession markers.
 - Schedules, eight-division standings, game details, and all 32 teams with historical season statistics.
 - nflverse advanced metrics, including EPA, CPOE, air yards, sacks, and QB hits where published.
-- Full-screen, split, four-pane, and one-plus-three layouts mixing IPTV, NFL, and MLB data.
+- Full-screen, split, four-pane, and one-plus-three layouts mixing IPTV, NFL, MLB, and MMA data.
 - M3U URL/file import, Xtream login, XMLTV matching, team/channel search, and now/next listings.
 - Matchup-to-guide broadcast discovery and real single-pane audio focus.
-- Live play/pause, local MP4 recording, scheduled NFL/MLB recordings, and a saved-game library.
+- Live play/pause, local MP4 recording, scheduled NFL/MLB games and MMA main-card recordings, and a saved-game library.
 - Stadium and Night themes, branded connection loaders, and reduced-motion support.
 
 ## Still to build
