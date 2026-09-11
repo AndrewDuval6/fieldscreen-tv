@@ -86,14 +86,18 @@ async function createRecorder({ stateFile, ffmpeg, provider, origin, now = Date.
       let game = null;
       if (input.game) {
         const g = input.game;
-        if (!['nfl','mlb'].includes(g.league) || !/^\d{1,16}$/.test(String(g.id)) || !g.home?.name || !g.away?.name || g.complete || g.timeTBD || g.home.placeholder || g.away.placeholder || !Number.isFinite(Date.parse(g.date))) fail('This game does not have a confirmed start time.');
+        if (!['nfl','mlb','mma'].includes(g.league) || !/^\d{1,16}$/.test(String(g.id)) || !g.home?.name || !g.away?.name || g.complete || g.stopped || g.timeTBD || g.home.placeholder || g.away.placeholder || !Number.isFinite(Date.parse(g.date))) fail('This game does not have a confirmed start time.');
         const team = t => ({ name: clean(t.name), fullName: clean(t.fullName), abbr: clean(t.abbr) });
         game = { id: String(g.id), league: g.league, date: new Date(g.date).toISOString(), home: team(g.home), away: team(g.away), network: clean(g.network), doubleHeader: Boolean(g.doubleHeader), gameNumber: Number(g.gameNumber) || 1 };
+        if (g.league === 'mma') {
+          if (!['ufc','pfl'].includes(g.promotion) || !clean(g.eventName)) fail('Choose a confirmed MMA event.');
+          Object.assign(game, { promotion: g.promotion, eventName: clean(g.eventName), eventNumber: /^\d{2,4}$/.test(String(g.eventNumber)) ? String(g.eventNumber) : '', session: g.session === 'main' ? 'main' : 'event' });
+        }
       }
       const scheduled = Boolean(game && Date.parse(game.date) > now() + 120000);
       const startAt = scheduled ? Date.parse(game.date) - 120000 : now();
       if (startAt > now() + 366 * 86400000) fail('Choose a game within the next year.');
-      const title = game ? `${game.away.abbr || game.away.name} at ${game.home.abbr || game.home.name}` : clean(input.title) || 'Live recording';
+      const title = game?.league === 'mma' ? game.eventName : game ? `${game.away.abbr || game.away.name} at ${game.home.abbr || game.home.name}` : clean(input.title) || 'Live recording';
       const p = await provider.snapshot();
       if (!p.connected && !p.saved) fail('Connect and remember your IPTV provider before scheduling a recording.');
       const channel = !game ? p.channels.find(c => c.id === input.channelId) : null;

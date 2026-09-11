@@ -8,7 +8,7 @@
 
 A television-first sports control room, starting with NFL and MLB. Field positions, a featured game, and configurable video/data panes in one 16:9 screen.
 
-**Development preview · v0.1.0-preview.10.** ESPN scores, schedules, all 32 NFL teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. MLB scores, daily schedules, all 30 teams, live diamonds, standings, wild-card races, and postseason series are connected. IPTV playback, XMLTV guide matching, local recording, scheduled recording, and a saved-video library are included. Favorite teams from NFL and MLB share one live and upcoming games view, with device-local saved selections. Wireless casting is still planned.
+**Development preview · v0.1.0-preview.11.** ESPN scores, schedules, all 32 NFL teams, division standings, game details, and team statistics are connected. nflverse adds advanced season statistics. MLB scores, daily schedules, all 30 teams, live diamonds, standings, wild-card races, and postseason series are connected. IPTV playback, XMLTV guide matching, local recording, scheduled recording, and a saved-video library are included. Favorite teams from NFL and MLB share one live and upcoming games view, with device-local saved selections. Wireless casting is still planned.
 
 ## Steam Deck is the TV console
 
@@ -20,9 +20,9 @@ The intended setup is Steam Deck connected to the TV, an Xbox controller, and a 
 
 Linux preview builds are packaged as an **x64 AppImage**, plus a portable `.tar.gz` alternative. They bundle the runtime, fonts, icons, and preview artwork; Node.js and a development server are not needed to run a packaged download.
 
-[**Download the Linux preview**](https://github.com/AndrewDuval6/fieldscreen-tv/releases/tag/v0.1.0-preview.10)
+[**Download the Linux preview**](https://github.com/AndrewDuval6/fieldscreen-tv/releases/tag/v0.1.0-preview.11)
 
-Choose `FieldScreen-TV-0.1.0-preview.10-Linux-x86_64.AppImage`, or the portable `.tar.gz` alternative.
+Choose `FieldScreen-TV-0.1.0-preview.11-Linux-x86_64.AppImage`, or the portable `.tar.gz` alternative.
 
 To launch on Steam Deck:
 
@@ -176,3 +176,14 @@ For the browser version, run `npm run dev -- --host 127.0.0.1`. For a Linux down
 The penguin/football emblem and stadium backdrop are original generated artwork. The backdrop is not a photograph of a live game. The logo was created with the built-in image generator; its [prompt](design/logo-prompt.txt) is included for provenance. Field diagrams use reported NFL positions; they are schematic views, not player-tracking data. Fonts are distributed under the licenses included with their packages. Icons come from Lucide. Video playback uses [hls.js](https://github.com/video-dev/hls.js) and [mpegts.js](https://github.com/xqq/mpegts.js); XMLTV parsing uses [saxes](https://github.com/lddubeau/saxes). Their licenses are included in the package. Recording uses a separate [FFmpeg](https://ffmpeg.org/) executable (LGPL 2.1 or later) with [musl](https://musl.libc.org/) (MIT). Their notices and licenses are bundled. Complete unmodified sources and the build script are provided as `FieldScreen-Recorder-Sources-8.1.2.tar.gz` alongside every recording-enabled release. Extract it and run `python3 build-recorder.py --source-dir . --output ./recorder` to rebuild offline; the portable app allows replacing `resources/recorder/ffmpeg`. Third-party dependencies retain their respective licenses. This is an independent fan project, not an official NFL, MLB, or Yahoo product.
 
 The source is published for inspection and download. An open-source license for the project has not been selected; third-party licenses still apply.
+
+
+## MMA fight nights
+
+Choose **MMA** in the sport selector for UFC and PFL schedules, full fight cards, fighter records, live bout status and recent results. Search by event or any fighter on a card. The event calendar includes numbered events and PPV listings when the data source identifies them as PPV; a numbered event alone does not imply a PPV purchase. The schedule covers the previous seven days and the next 120 days, with source availability shown explicitly.
+
+With your IPTV provider and XMLTV guide connected, **Watch live** matches the event number or both fighters in the current guide, then uses the same fast stream selection as football and baseball. Unknown coverage opens the channel chooser. MMA cards and the event board can share Multiview with NFL, MLB, and live streams.
+
+**Record main card** schedules the later card session when separate preliminary times are listed; otherwise **Record event** uses the event start. The default MMA recording length is six hours and can be changed. Each recording captures one channel; prelims on a different channel require a separate recording. Keep the device online and FieldScreen running. Reschedule if the promotion changes the event time. Fight results and session times come from ESPN and may lag the broadcast; bout order can change. Provider subscriptions and event purchases are separate.
+
+NHL hockey is planned for **September 29, 2026**, the announced [2026–27 NHL opening night](https://www.nhl.com/news/nhl-announces-2026-27-regular-season-schedule). Hockey is not included in this preview. FieldScreen’s longer-term direction is every sport in one TV experience.

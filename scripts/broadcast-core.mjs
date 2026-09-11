@@ -1,4 +1,6 @@
+import { matchMmaBroadcasts } from './mma-core.mjs';
 export function matchBroadcasts(game, channels, now = Date.now()) {
+  if (game.league === 'mma') return matchMmaBroadcasts(game, channels, now);
   const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   const contains = (haystack, name) => (' ' + normalize(haystack) + ' ').includes(' ' + normalize(name) + ' ');
   const names = t => [t.name, t.fullName, ...(String(t.abbr || '').length >= 3 ? [t.abbr] : [])].filter(Boolean);

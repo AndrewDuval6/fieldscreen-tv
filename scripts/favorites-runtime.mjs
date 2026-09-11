@@ -7,7 +7,7 @@ const button = (label, attrs = '') => `<button class="ez-button" ${attrs}>${labe
 const data = new Map(), catalogs = new Map(), errors = new Map(), pending = new Set();
 let favorites = [], ready = false, saving = false, storageError = '', editing = false, filter = 'all', search = '', refreshed = 0;
 const active = () => api.state.view === 'favorites';
-const leagues = () => root.fieldscreenSports.leagues();
+const leagues = () => root.fieldscreenSports.teamLeagues();
 const allGames = () => [...data.values()].flatMap(board => board.games || []);
 const allTeams = () => [...catalogs].flatMap(([league, teams]) => teams.filter(t => t.id && !t.placeholder).map(t => ({ ...t, league }))).sort((a,b) => a.fullName.localeCompare(b.fullName));
 const picked = (league, team) => favorites.includes(teamKey(league, team));
